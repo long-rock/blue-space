@@ -1,0 +1,3 @@
+---
+Checks: 'clang-analyzer-*,clang-diagnostic-*,readability-*'
+FormatStyle: .clang-format
