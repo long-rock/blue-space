@@ -9,12 +9,13 @@ miner_cpu_inc = include_directories([
 
 gmp_dep = dependency('gmp')
 gmpxx_dep = dependency('gmpxx')
+omp = dependency('openmp')
 
 libminer_cpu = static_library(
     'miner-cpu',
     cpp_sources,
     include_directories: [miner_common_inc, miner_cpu_inc],
-    dependencies: [gmp_dep, gmpxx_dep]
+    dependencies: [gmp_dep, gmpxx_dep, omp]
 )
 
 gtest_main_dep = dependency('gtest', main : true, fallback: ['gtest', 'gtest_main_dep'])
@@ -34,4 +35,23 @@ if gtest_dep.found() and gtest_main_dep.found()
     )
 
     test('test_miner_cpu', ex)
+endif
+
+benchmark_main_dep = dependency('google-benchmark', main : true, fallback: ['google-benchmark', 'google_benchmark_main_dep'])
+benchmark_dep = dependency('google-benchmark', fallback: ['google-benchmark', 'google_benchmark_dep'])
+
+if benchmark_dep.found() and benchmark_main_dep.found()
+    benchmark_sources = [
+        'test/cpu_miner_benchmark.cc'
+    ]
+
+    ex = executable(
+        'benchmark-miner-cpu',
+        benchmark_sources,
+        dependencies: [benchmark_main_dep, benchmark_dep],
+        include_directories: [miner_common_inc, miner_cpu_inc],
+        link_with: [libminer_cpu]
+    )
+
+    test('benchmark_miner_cpu', ex)
 endif
