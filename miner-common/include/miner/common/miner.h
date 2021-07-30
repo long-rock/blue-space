@@ -9,10 +9,11 @@ namespace miner
 namespace common
 {
 
-struct Planet
+struct WorkItem
 {
     int64_t x;
     int64_t y;
+    bool is_planet;
     std::string hash;
 };
 
@@ -20,8 +21,7 @@ class Miner
 {
   public:
     virtual ~Miner() = default;
-    virtual std::vector<Planet> mine_batch(int64_t x, int64_t y, uint32_t size, uint32_t rarity,
-                                           uint32_t key) const = 0;
+    virtual void mine_batch(std::vector<WorkItem> &items, uint32_t rarity, uint32_t key) const = 0;
 };
 
 } // namespace common

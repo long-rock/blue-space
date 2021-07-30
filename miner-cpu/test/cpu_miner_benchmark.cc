@@ -5,26 +5,28 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <iostream>
 
 const int64_t DEFAULT_SIZE = 256;
 const uint64_t RARITY = 16384;
 const uint64_t KEY = 420;
 
-static void cpu_miner_benchmark(benchmark::State &state) {
+static void cpu_miner_benchmark(benchmark::State &state)
+{
     auto miner = miner::cpu::CpuMiner();
-    // values computed with darkforest-rs
-    std::vector<miner::common::Planet> expected_planets = {
-        // NOLINTNEXTLINE
-        {.x = -81, .y = 13, .hash = "940730834903647137929381122188788642093437120345760373357871377071349968"},
-        // NOLINTNEXTLINE
-        {.x = -40, .y = -65, .hash = "571181713569563774710759574345761362877802556246966615401948128970981398"},
-        // NOLINTNEXTLINE
-        {.x = -37, .y = -47, .hash = "119067170509170773348244389443884923635208868716853804680619018353327908"},
-        // NOLINTNEXTLINE
-        {.x = 122, .y = 35, .hash = "580522171046983233959685904700229466777380943669338457542254606119083578"}};
 
-    for (auto _: state) {
-        miner.mine_batch(-DEFAULT_SIZE / 2, -DEFAULT_SIZE / 2, DEFAULT_SIZE, RARITY, KEY);
+    std::vector<miner::common::WorkItem> work_items;
+    for (int64_t x = -DEFAULT_SIZE / 2; x < DEFAULT_SIZE / 2; x++)
+    {
+        for (int64_t y = -DEFAULT_SIZE / 2; x < DEFAULT_SIZE / 2; x++)
+        {
+            work_items.push_back(miner::common::WorkItem{.x = x, .y = y});
+        }
+    }
+
+    for (auto _ : state)
+    {
+        miner.mine_batch(work_items, RARITY, KEY);
     }
 }
 

@@ -16,8 +16,7 @@ class CpuMiner : public common::Miner
   public:
     CpuMiner();
     ~CpuMiner();
-    std::vector<common::Planet> mine_batch(int64_t x, int64_t y, uint32_t size, uint32_t rarity,
-                                           uint32_t key) const override;
+    void mine_batch(std::vector<common::WorkItem> &items, uint32_t rarity, uint32_t key) const override;
 };
 
 } // namespace cpu
