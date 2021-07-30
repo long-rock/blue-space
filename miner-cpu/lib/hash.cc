@@ -7,6 +7,10 @@
 
 using namespace miner::cpu;
 
+// P needs around 254 bits of storage.
+// Use 512 bits integers to avoid overflows.
+const uint32_t MPZ_BIT_SIZE = 512;
+
 namespace internal
 {
 
@@ -33,13 +37,13 @@ void fifth_power(mpz_t r, mpz_srcptr n, mpz_t s, mpz_t f, mpz_t t)
 
 miner::cpu::Sponge::Sponge()
 {
-    mpz_init(l_);
-    mpz_init(r_);
-    mpz_init(t0_);
-    mpz_init(t1_);
-    mpz_init(t2_);
-    mpz_init(t3_);
-    mpz_init(t4_);
+    mpz_init2(l_, MPZ_BIT_SIZE);
+    mpz_init2(r_, MPZ_BIT_SIZE);
+    mpz_init2(t0_, MPZ_BIT_SIZE);
+    mpz_init2(t1_, MPZ_BIT_SIZE);
+    mpz_init2(t2_, MPZ_BIT_SIZE);
+    mpz_init2(t3_, MPZ_BIT_SIZE);
+    mpz_init2(t4_, MPZ_BIT_SIZE);
 }
 
 miner::cpu::Sponge::~Sponge()
