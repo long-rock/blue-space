@@ -6,3 +6,4 @@ gtest = subproject('gtest')
 
 subdir('miner-common')
 subdir('miner-cpu')
+subdir('explorer')
