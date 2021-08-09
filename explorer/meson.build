@@ -7,12 +7,14 @@ explorer_inc = include_directories([
     'include'
 ])
 
+leveldb_dep = dependency('leveldb', required: true)
+cereal_dep = dependency('cereal', required: true, fallback: ['cereal', 'cereal_dep'])
 
 libexplorer = static_library(
     'explorer',
     cpp_sources,
     include_directories: [explorer_inc, miner_common_inc],
-    dependencies: []
+    dependencies: [leveldb_dep, cereal_dep]
 )
 
 gtest_main_dep = dependency('gtest', main : true, fallback: ['gtest', 'gtest_main_dep'])

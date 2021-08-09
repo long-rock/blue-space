@@ -2,6 +2,8 @@
 
 #include "miner/common/miner.h"
 
+#include <leveldb/db.h>
+
 #include <memory>
 #include <optional>
 #include <tuple>
@@ -49,8 +51,23 @@ class InMemoryStorage : public Storage
     void store(miner::common::WorkItem item) override;
 
   private:
-    using ExploredMap = std::unordered_map<miner::common::Coordinate, miner::common::WorkItem, internal::CoordinateHash, internal::CoordinateEqual>;
+    using ExploredMap = std::unordered_map<miner::common::Coordinate, miner::common::WorkItem, internal::CoordinateHash,
+                                           internal::CoordinateEqual>;
     ExploredMap explored_;
+};
+
+class FileStorage : public Storage
+{
+  public:
+    FileStorage(const std::string &filename);
+    ~FileStorage();
+
+    std::optional<miner::common::WorkItem> get(const miner::common::Coordinate &coord) const override;
+
+    void store(miner::common::WorkItem item) override;
+
+  private:
+    leveldb::DB *db_;
 };
 
 } // namespace explorer

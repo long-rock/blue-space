@@ -15,7 +15,7 @@ const uint64_t KEY = 420;
 int main(int argc, char **argv)
 {
     miner::common::Coordinate origin;
-    auto storage = std::make_shared<explorer::InMemoryStorage>();
+    auto storage = std::make_shared<explorer::FileStorage>("/tmp/explorer.db");
     auto explorer = std::make_shared<explorer::SpiralExplorer>(storage, origin);
 
     std::size_t batch_size = 256 * 256;
