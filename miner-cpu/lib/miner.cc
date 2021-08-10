@@ -5,6 +5,7 @@
 
 #include <gmpxx.h>
 #include <omp.h>
+#include <boost/log/trivial.hpp>
 
 #include <memory>
 #include <vector>
@@ -44,6 +45,7 @@ void miner::cpu::CpuMiner::mine_batch(std::vector<common::WorkItem> &items, uint
     Sponge sponge;
     if (options_.num_threads > 0)
     {
+        BOOST_LOG_TRIVIAL(info) << "Set OMP CPU threads to " << options_.num_threads;
         omp_set_num_threads(options_.num_threads);
     }
 

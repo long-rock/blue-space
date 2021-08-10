@@ -4,6 +4,7 @@
 
 #include <cgbn/cgbn.h>
 #include <gmpxx.h>
+#include <boost/log/trivial.hpp>
 
 // NEEDS TO BE INCLUDED AFTER CGBN AND GMP
 #include "cu_helpers.h"
@@ -241,6 +242,7 @@ void run_mine_batch(int device, const CudaMinerOptions &options, std::vector<Wor
     uint32_t grid_size = (batch.size() + items_per_block - 1) / items_per_block;
     dim3 block_size(bn_params::TPI, options.block_size);
 
+    BOOST_LOG_TRIVIAL(info) << "Starting miner kernel. grid_size=" << grid_size << ", block_size=" << options.block_size;
     mine_batch_kernel<bn_params><<<grid_size, block_size>>>(bn_report, d_batch, batch.size(), options.thread_work_size,
                                                             planet_threshold, key, mimc.P, d_C, mimc.C_size);
 

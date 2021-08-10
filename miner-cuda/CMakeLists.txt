@@ -11,10 +11,11 @@ set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-use_fast_math)
 
 find_package(CGBN REQUIRED)
+find_package(Boost REQUIRED COMPONENTS log)
 
 cuda_add_library(miner-cuda STATIC ${CU_SOURCE})
 target_include_directories(miner-cuda PUBLIC "include")
-target_link_libraries(miner-cuda PUBLIC miner-common PkgConfig::GMP CGBN::CGBN)
+target_link_libraries(miner-cuda PUBLIC miner-common PkgConfig::GMP Boost::log CGBN::CGBN)
 
 set(
     TEST_SOURCE

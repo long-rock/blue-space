@@ -8,6 +8,7 @@
 #endif
 
 #include <CLI/CLI.hpp>
+#include <boost/log/trivial.hpp>
 
 #include <chrono>
 #include <cstdint>
@@ -105,13 +106,13 @@ class BlueSpace
         std::unique_ptr<miner::common::Miner> miner;
         if (miner_type_ == MinerType::Cpu)
         {
-            std::cout << "Using CPU miner" << std::endl;
+            BOOST_LOG_TRIVIAL(info) << "Use CPU miner";
             miner = std::make_unique<miner::cpu::CpuMiner>(cpu_miner_options_);
         }
         else if (miner_type_ == MinerType::Cuda)
         {
 #if HAS_CUDA_MINER
-            std::cout << "Using CUDA miner" << std::endl;
+            BOOST_LOG_TRIVIAL(info) << "Use CUDA miner, device id " << cuda_device_;
             miner = std::make_unique<miner::cuda::CudaMiner>(cuda_device_, cuda_miner_options_);
 #endif
         }
@@ -138,8 +139,8 @@ class BlueSpace
         }
 
         auto start = timer_clock::now();
-        std::cout << "Starting: size=" << mine_size_ << ", rarity=" << mine_rarity_ << ", key=" << mine_key_
-                  << std::endl;
+        BOOST_LOG_TRIVIAL(info) << "Mine batch size=" << mine_size_ << ", rarity=" << mine_rarity_
+                                << ", key=" << mine_key_;
         miner->mine_batch(batch, mine_rarity_, mine_key_);
         for (auto &item : batch)
         {
@@ -150,7 +151,8 @@ class BlueSpace
         if (time_ms > 0)
         {
             double rate = mine_size_ / (time_ms / 1000.0);
-            std::cout << "Mined " << mine_size_ << " hashes in " << time_ms << " ms. Hash rate: " << rate << " H/s" << std::endl;
+            BOOST_LOG_TRIVIAL(info) << "Mined " << mine_size_ << " hashes in " << time_ms << " ms. Hash rate: " << rate
+                                    << " H/s";
         }
     }
 
@@ -189,48 +191,4 @@ int main(int argc, char **argv)
         std::cerr << "Error: " << exc.what() << std::endl;
         return 1;
     }
-    /*
-    miner::common::Coordinate origin(0, 0);
-    auto storage = std::make_shared<explorer::FileStorage>("/tmp/explorer.db");
-    auto explorer = std::make_shared<explorer::SpiralExplorer>(storage, origin);
-
-    std::size_t batch_size = 256 * 256 * 4;
-    std::vector<miner::common::WorkItem> batch;
-
-    for (std::size_t i = 0; i < batch_size; ++i)
-    {
-        // just crash if there's no value
-        auto next = explorer->next().value();
-        batch.push_back(miner::common::WorkItem{.x = next.x, .y = next.y, .is_planet = false, .hash = ""});
-    }
-
-#ifdef HAS_CUDA_MINER
-    miner::cuda::CudaMinerOptions options;
-    miner::cuda::CudaMiner miner(0, options);
-#else
-    miner::cpu::CpuMiner miner;
-#endif
-
-    auto start = std::chrono::steady_clock::now();
-    miner.mine_batch(batch, RARITY, KEY);
-    for (auto &item : batch)
-    {
-        storage->store(item);
-    }
-    auto end = std::chrono::steady_clock::now();
-
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    auto rate = (batch_size * 1000.0) / duration;
-    std::cout << "Mine " << batch_size << " hashes in " << duration << " ms (" << rate << " H/s)" << std::endl;
-
-    for (std::size_t i = 0; i < batch.size(); ++i)
-    {
-        auto p = batch[i];
-        if (p.is_planet)
-        {
-            std::cout << "H(" << p.x << ", " << p.y << ") = " << p.hash << std::endl;
-        }
-    }
-    return 0;
-    */
 }
