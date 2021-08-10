@@ -12,7 +12,7 @@ const uint64_t KEY = 420;
 
 TEST(CpuMinerTest, FindsPlanets)
 {
-    auto miner = miner::cpu::CpuMiner();
+    auto miner = miner::cpu::CpuMiner(miner::cpu::CpuMinerOptions());
     // values computed with darkforest-rs
     std::vector<miner::common::WorkItem> expected_planets = {
         {.x = -81,

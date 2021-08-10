@@ -39,6 +39,9 @@ class BlueSpace
         bool use_cpu_miner = false;
         app.add_flag("--cpu", use_cpu_miner, "Use CPU miner");
 
+        std::optional<uint32_t> cpu_num_threads;
+        app.add_option("--cpu-threads", cpu_num_threads, "Set the number of CPU threads used for mining");
+
         bool use_cuda_miner = false;
 #if HAS_CUDA_MINER
         app.add_flag("--cuda", use_cuda_miner, "Use CUDA miner");
@@ -84,6 +87,8 @@ class BlueSpace
         {
             // fallback to cpu miner
             miner_type_ = MinerType::Cpu;
+            miner::cpu::CpuMinerOptions options(cpu_num_threads.value_or(0));
+            cpu_miner_options_ = options;
         }
 
         mine_rarity_ = mine_rarity.value_or(16384);
@@ -101,7 +106,7 @@ class BlueSpace
         if (miner_type_ == MinerType::Cpu)
         {
             std::cout << "Using CPU miner" << std::endl;
-            miner = std::make_unique<miner::cpu::CpuMiner>();
+            miner = std::make_unique<miner::cpu::CpuMiner>(cpu_miner_options_);
         }
         else if (miner_type_ == MinerType::Cuda)
         {
@@ -151,6 +156,7 @@ class BlueSpace
 
   private:
     MinerType miner_type_;
+    miner::cpu::CpuMinerOptions cpu_miner_options_;
 #if HAS_CUDA_MINER
     uint32_t cuda_device_;
     miner::cuda::CudaMinerOptions cuda_miner_options_;

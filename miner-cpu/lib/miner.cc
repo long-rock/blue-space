@@ -4,6 +4,7 @@
 #include "miner/common/constants.h"
 
 #include <gmpxx.h>
+#include <omp.h>
 
 #include <memory>
 #include <vector>
@@ -26,7 +27,7 @@ mpz_class wrap_coordinate(int64_t c)
 
 } // namespace internal
 
-miner::cpu::CpuMiner::CpuMiner()
+miner::cpu::CpuMiner::CpuMiner(const CpuMinerOptions &options) : options_(options)
 {
 }
 
@@ -41,6 +42,11 @@ void miner::cpu::CpuMiner::mine_batch(std::vector<common::WorkItem> &items, uint
     mpz_class threshold = P / rarity_;
 
     Sponge sponge;
+    if (options_.num_threads > 0)
+    {
+        omp_set_num_threads(options_.num_threads);
+    }
+
     #pragma omp parallel for default(none) shared(key_, threshold, items) private(sponge)
     for (auto &work_item : items)
     {

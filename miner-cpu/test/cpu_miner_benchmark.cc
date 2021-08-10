@@ -13,7 +13,7 @@ const uint64_t KEY = 420;
 
 static void cpu_miner_benchmark(benchmark::State &state)
 {
-    auto miner = miner::cpu::CpuMiner();
+    auto miner = miner::cpu::CpuMiner(miner::cpu::CpuMinerOptions());
 
     std::vector<miner::common::WorkItem> work_items;
     for (int64_t x = -DEFAULT_SIZE / 2; x < DEFAULT_SIZE / 2; x++)
