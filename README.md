@@ -13,10 +13,11 @@ with your distribution favourite package manager.
  * Boost.Log
  * [Google Test](https://github.com/google/googletest)
  * [Google Benchmark](https://github.com/google/benchmark)
+ * [CLI11 1.9](https://github.com/CLIUtils/CLI11). Note that this project expects to find the header in `<CLI/CLI.hpp>`.
 
 To build the GPU miner, you need the following additional dependencies.
 
- * [The CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit)
+ * [The CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit). Follows for example [this step-by-step tutorial](https://cloud.google.com/compute/docs/gpus/install-drivers-gpu).
  * [CGBN](https://github.com/NVlabs/CGBN). You should download the source
     to a location on your file system.
 
