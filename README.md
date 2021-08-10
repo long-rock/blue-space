@@ -20,6 +20,17 @@ To build the GPU miner, you need the following additional dependencies.
  * [CGBN](https://github.com/NVlabs/CGBN). You should download the source
     to a location on your file system.
 
+On Ubuntu 21.04 you can install all dependencies with:
+
+    sudo apt install -y \
+        build-essential \
+        cmake \
+        libgmp-dev \
+        libboost-thread-dev \
+        libboost-log-dev \
+        libgtest-dev \ # optional
+        libbenchmark-dev # optional
+
 After you have all dependencies in place, it's time to compile `blue-space`.
 
 Start by downloading the source to your file system.
@@ -32,6 +43,7 @@ Configure `cmake`, run the following from the `blue-space` directory.
         -S . \ # the source location
         -B buildir \ # the build directory
         -DCMAKE_BUILD_TYPE=Release \ # make release
+        -DBUILD_TEST=ON \ # build tests, requires gtest and benchmark
         -DCUDA_MINER=ON \ # enable cuda miner
         -DCUDA_HOST_COMPILER=/usr/bin/g++-10 \ # only needed if you have g++ 11 on your system
         -DCMAKE_CUDA_ARCHITECTURES=35 \ # cuda architecture, depends on your gpu

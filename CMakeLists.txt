@@ -3,10 +3,11 @@ cmake_minimum_required(VERSION 3.1)
 project(
     blue-space
     VERSION 0.1
-    LANGUAGES CXX CUDA
+    LANGUAGES CXX
 )
 
 option(CUDA_MINER "Enable CUDA miner" OFF)
+option(BUILD_TEST "Build tests" ON)
 option(CLANG_TIDY "Run clang-tidy" OFF)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -16,9 +17,11 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 
-enable_testing()
-find_package(GTest REQUIRED)
-find_package(benchmark REQUIRED)
+if(BUILD_TEST)
+    enable_testing()
+    find_package(GTest REQUIRED)
+    find_package(benchmark REQUIRED)
+endif()
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GMP REQUIRED IMPORTED_TARGET gmpxx)
@@ -32,6 +35,7 @@ add_compile_options(-Wall -Wextra -pedantic)
 add_subdirectory("miner-common")
 add_subdirectory("miner-cpu")
 if (CUDA_MINER)
+    enable_language(CUDA)
     add_subdirectory("miner-cuda")
 endif()
 add_subdirectory("explorer")
