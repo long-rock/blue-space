@@ -142,17 +142,20 @@ class BlueSpace
         BOOST_LOG_TRIVIAL(info) << "Mine batch size=" << mine_size_ << ", rarity=" << mine_rarity_
                                 << ", key=" << mine_key_;
         miner->mine_batch(batch, mine_rarity_, mine_key_);
+        auto end_no_storage = timer_clock::now();
         for (auto &item : batch)
         {
             storage->store(item);
         }
         auto end = timer_clock::now();
         auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        auto time_no_storage_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end_no_storage - start).count();
         if (time_ms > 0)
         {
             double rate = mine_size_ / (time_ms / 1000.0);
-            BOOST_LOG_TRIVIAL(info) << "Mined " << mine_size_ << " hashes in " << time_ms << " ms. Hash rate: " << rate
-                                    << " H/s";
+            double rate_no_storage = mine_size_ / (time_no_storage_ms / 1000.0);
+            BOOST_LOG_TRIVIAL(info) << "Mined " << mine_size_ << " hashes in " << time_ms << " ms (" << time_no_storage_ms << " ms without storage). Hash rate: " << rate
+                                    << " H/s, hash rate (no storage): " << rate_no_storage << " H/s";
         }
     }
 
