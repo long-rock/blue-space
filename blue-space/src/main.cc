@@ -144,8 +144,8 @@ class BlueSpace
         auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         if (time_ms > 0)
         {
-            auto rate = mine_size_ / time_ms;
-            std::cout << "Mining rate:\t" << (rate * 1000.0) << " H/s" << std::endl;
+            double rate = mine_size_ / (time_ms / 1000.0);
+            std::cout << "Mined " << mine_size_ << " hashes in " << time_ms << " ms. Hash rate: " << rate << " H/s" << std::endl;
         }
     }
 
