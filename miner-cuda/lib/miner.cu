@@ -173,6 +173,7 @@ __global__ void mine_batch_kernel(cgbn_error_report_t *report, CudaWorkItem *bat
     env_t env(ctx);
 
     uint32_t block_x = blockIdx.x;
+    uint32_t thread_y = threadIdx.y;
 
     // Copy mimc constants to memory
     bn_t C[C_SIZE];
@@ -193,7 +194,7 @@ __global__ void mine_batch_kernel(cgbn_error_report_t *report, CudaWorkItem *bat
     bn_t yi, xi, hash;
     for (std::size_t i = 0; i < items_per_thread; ++i)
     {
-        idx = block_x * items_per_thread + i;
+        idx = (block_x * blockDim.y * items_per_thread) + (thread_y * items_per_thread) + i;
         if (idx < batch_size)
         {
             wrap_coordinate(env, xi, batch[idx].x, P);
@@ -236,11 +237,13 @@ void run_mine_batch(int device, std::vector<WorkItem> &batch, const MimcParams &
 
     CUDA_CHECK(cudaMemcpy(d_batch, cpu_batch, sizeof(CudaWorkItem) * batch.size(), cudaMemcpyHostToDevice));
 
-    uint32_t items_per_thread = 128;
+    uint32_t items_per_thread = 256;
+    uint32_t threads_per_block = 32;
 
-    // grid_size = ceil(size / items_per_thread)
-    uint32_t grid_size = (batch.size() + items_per_thread - 1) / items_per_thread;
-    dim3 block_size(bn_params::TPI);
+    uint32_t items_per_block = items_per_thread * threads_per_block;
+    // grid_size = ceil(size / items_per_block)
+    uint32_t grid_size = (batch.size() + items_per_block - 1) / items_per_block;
+    dim3 block_size(bn_params::TPI, threads_per_block);
 
     std::cout << "Starting kernel with grid size " << grid_size << std::endl;
     mine_batch_kernel<bn_params><<<grid_size, block_size>>>(bn_report, d_batch, batch.size(), items_per_thread,

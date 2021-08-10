@@ -21,7 +21,7 @@ int main(int argc, char **argv)
     auto storage = std::make_shared<explorer::FileStorage>("/tmp/explorer.db");
     auto explorer = std::make_shared<explorer::SpiralExplorer>(storage, origin);
 
-    std::size_t batch_size = 256 * 256;
+    std::size_t batch_size = 256 * 256 * 4;
     std::vector<miner::common::WorkItem> batch;
 
     for (std::size_t i = 0; i < batch_size; ++i)
