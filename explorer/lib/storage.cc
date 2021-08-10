@@ -2,8 +2,6 @@
 
 #include "miner/common/miner.h"
 
-#include <leveldb/db.h>
-
 #include <memory>
 #include <sstream>
 #include <stdexcept>

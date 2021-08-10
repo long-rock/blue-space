@@ -25,6 +25,7 @@ On Ubuntu 21.04 you can install all dependencies with:
     sudo apt install -y \
         build-essential \
         cmake \
+        pkg-config \
         libgmp-dev \
         libboost-thread-dev \
         libboost-log-dev \
