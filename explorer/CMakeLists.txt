@@ -1,5 +1,3 @@
-find_package(leveldb REQUIRED)
-
 set(
     CPP_SOURCE
     "lib/storage.cc"
@@ -7,7 +5,7 @@ set(
 )
 add_library(explorer STATIC ${CPP_SOURCE})
 target_include_directories(explorer PUBLIC "include")
-target_link_libraries(explorer PUBLIC miner-common leveldb)
+target_link_libraries(explorer PUBLIC miner-common)
 
 set(
     TEST_SOURCE

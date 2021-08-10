@@ -2,8 +2,6 @@
 
 #include "miner/common/miner.h"
 
-#include <leveldb/db.h>
-
 #include <memory>
 #include <optional>
 #include <tuple>
@@ -65,9 +63,6 @@ class FileStorage : public Storage
     std::optional<miner::common::WorkItem> get(const miner::common::Coordinate &coord) const override;
 
     void store(miner::common::WorkItem item) override;
-
-  private:
-    leveldb::DB *db_;
 };
 
 } // namespace explorer

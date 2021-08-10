@@ -32,18 +32,10 @@ void InMemoryStorage::store(miner::common::WorkItem item)
 
 FileStorage::FileStorage(const std::string &filename)
 {
-    leveldb::Options db_options;
-    db_options.create_if_missing = true;
-    auto status = leveldb::DB::Open(db_options, filename, &db_);
-    if (!status.ok())
-    {
-        throw std::runtime_error("Could not create file storage");
-    }
 }
 
 FileStorage::~FileStorage()
 {
-    delete db_;
 }
 
 std::optional<miner::common::WorkItem> FileStorage::get(const miner::common::Coordinate &coord) const
