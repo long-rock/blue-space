@@ -3,6 +3,9 @@
 
 #include "miner/common/miner.h"
 #include "miner/cpu/miner.h"
+#ifdef HAS_CUDA_MINER
+#include "miner/cuda/miner.h"
+#endif
 
 #include <chrono>
 #include <cstdint>
@@ -14,7 +17,7 @@ const uint64_t KEY = 420;
 
 int main(int argc, char **argv)
 {
-    miner::common::Coordinate origin;
+    miner::common::Coordinate origin(0, 0);
     auto storage = std::make_shared<explorer::FileStorage>("/tmp/explorer.db");
     auto explorer = std::make_shared<explorer::SpiralExplorer>(storage, origin);
 
@@ -28,7 +31,11 @@ int main(int argc, char **argv)
         batch.push_back(miner::common::WorkItem{.x = next.x, .y = next.y, .is_planet = false, .hash = ""});
     }
 
+#ifdef HAS_CUDA_MINER
+    miner::cuda::CudaMiner miner(0);
+#else
     miner::cpu::CpuMiner miner;
+#endif
 
     auto start = std::chrono::steady_clock::now();
     miner.mine_batch(batch, RARITY, KEY);
@@ -42,5 +49,12 @@ int main(int argc, char **argv)
     auto rate = (batch_size * 1000.0) / duration;
     std::cout << "Mine " << batch_size << " hashes in " << duration << " ms (" << rate << " H/s)" << std::endl;
 
+    for (std::size_t i = 0; i < batch.size(); ++i) {
+        auto p = batch[i];
+        if (p.is_planet)
+        {
+            std::cout << "H(" << p.x << ", " << p.y << ") = " << p.hash << std::endl;
+        }
+    }
     return 0;
 }
