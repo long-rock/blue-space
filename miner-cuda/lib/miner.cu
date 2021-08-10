@@ -9,13 +9,12 @@
 #include "cu_helpers.h"
 
 #include <cassert>
-#include <iostream>
 #include <vector>
 
 using namespace miner::common;
 using namespace miner::cuda;
 
-CudaMiner::CudaMiner(int device) : device_(device)
+CudaMiner::CudaMiner(int device, const CudaMinerOptions &options) : device_(device), options_(options)
 {
 }
 
@@ -212,8 +211,8 @@ __global__ void mine_batch_kernel(cgbn_error_report_t *report, CudaWorkItem *bat
 }
 
 template <class bn_params>
-void run_mine_batch(int device, std::vector<WorkItem> &batch, const MimcParams &mimc, const bn_mem_t &planet_threshold,
-                    const bn_mem_t &key)
+void run_mine_batch(int device, const CudaMinerOptions &options, std::vector<WorkItem> &batch, const MimcParams &mimc,
+                    const bn_mem_t &planet_threshold, const bn_mem_t &key)
 {
     cgbn_error_report_t *bn_report;
 
@@ -237,16 +236,12 @@ void run_mine_batch(int device, std::vector<WorkItem> &batch, const MimcParams &
 
     CUDA_CHECK(cudaMemcpy(d_batch, cpu_batch, sizeof(CudaWorkItem) * batch.size(), cudaMemcpyHostToDevice));
 
-    uint32_t items_per_thread = 256;
-    uint32_t threads_per_block = 32;
-
-    uint32_t items_per_block = items_per_thread * threads_per_block;
+    uint32_t items_per_block = options.thread_work_size * options.block_size;
     // grid_size = ceil(size / items_per_block)
     uint32_t grid_size = (batch.size() + items_per_block - 1) / items_per_block;
-    dim3 block_size(bn_params::TPI, threads_per_block);
+    dim3 block_size(bn_params::TPI, options.block_size);
 
-    std::cout << "Starting kernel with grid size " << grid_size << std::endl;
-    mine_batch_kernel<bn_params><<<grid_size, block_size>>>(bn_report, d_batch, batch.size(), items_per_thread,
+    mine_batch_kernel<bn_params><<<grid_size, block_size>>>(bn_report, d_batch, batch.size(), options.thread_work_size,
                                                             planet_threshold, key, mimc.P, d_C, mimc.C_size);
 
     CUDA_CHECK(cudaDeviceSynchronize());
@@ -295,5 +290,5 @@ void CudaMiner::mine_batch(std::vector<common::WorkItem> &items, uint32_t rarity
     };
 
     typedef kernel::BnParams<32> bn_params_32;
-    kernel::run_mine_batch<bn_params_32>(device_, items, mimc, planet_threshold_bn, key_bn);
+    kernel::run_mine_batch<bn_params_32>(device_, options_, items, mimc, planet_threshold_bn, key_bn);
 }
