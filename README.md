@@ -27,7 +27,9 @@ On Ubuntu 21.04 you can install all dependencies with:
         build-essential \
         cmake \
         pkg-config \
+        rapidjson-dev \
         libgmp-dev \
+        libboost-container-dev \
         libboost-thread-dev \
         libboost-log-dev \
         libgtest-dev \ # optional

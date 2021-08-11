@@ -1,3 +1,5 @@
+#include "application/application.h"
+
 #include "explorer/explorer.h"
 #include "explorer/storage.h"
 
@@ -24,6 +26,12 @@ class BlueSpace
         Cuda,
     };
 
+    enum RunMode
+    {
+        Benchmark,
+        Stateless
+    };
+
     using timer_clock = std::chrono::steady_clock;
 
     bool parse_args(int argc, char **argv)
@@ -36,6 +44,9 @@ class BlueSpace
 
         bool benchmark_mode = false;
         app.add_flag("--benchmark", benchmark_mode, "Run a simple benchmark");
+
+        bool stateless_mode = false;
+        app.add_flag("--stateless", stateless_mode, "Run stateless server");
 
         bool use_cpu_miner = false;
         app.add_flag("--cpu", use_cpu_miner, "Use CPU miner");
@@ -96,34 +107,47 @@ class BlueSpace
         mine_key_ = mine_key.value_or(420);
         mine_size_ = mine_size.value_or(256);
 
-        benchmark_mode_ = benchmark_mode;
+        if (benchmark_mode)
+        {
+            run_mode_ = RunMode::Benchmark;
+        } else if (stateless_mode)
+        {
+            run_mode_ = RunMode::Stateless;
+        } else {
+            // default to stateless
+            run_mode_ = RunMode::Stateless;
+        }
 
         return true;
     }
 
     void run()
     {
-        std::unique_ptr<miner::common::Miner> miner;
+        std::shared_ptr<miner::common::Miner> miner;
         if (miner_type_ == MinerType::Cpu)
         {
             BOOST_LOG_TRIVIAL(info) << "Use CPU miner";
-            miner = std::make_unique<miner::cpu::CpuMiner>(cpu_miner_options_);
+            miner = std::make_shared<miner::cpu::CpuMiner>(cpu_miner_options_);
         }
         else if (miner_type_ == MinerType::Cuda)
         {
 #if HAS_CUDA_MINER
             BOOST_LOG_TRIVIAL(info) << "Use CUDA miner, device id " << cuda_device_;
-            miner = std::make_unique<miner::cuda::CudaMiner>(cuda_device_, cuda_miner_options_);
+            miner = std::make_shared<miner::cuda::CudaMiner>(cuda_device_, cuda_miner_options_);
 #endif
         }
 
-        if (benchmark_mode_)
+        if (run_mode_ == RunMode::Benchmark)
         {
             run_benchmark(miner);
+        } else if (run_mode_ == RunMode::Stateless) {
+            auto rpc = std::make_shared<application::RpcServer>(miner);
+            application::Application app(rpc);
+            app.start();
         }
     }
 
-    void run_benchmark(std::unique_ptr<miner::common::Miner> &miner)
+    void run_benchmark(std::shared_ptr<miner::common::Miner> &miner)
     {
         miner::common::Coordinate origin(0, 0);
         auto storage = std::make_shared<explorer::InMemoryStorage>();
@@ -169,7 +193,7 @@ class BlueSpace
     uint32_t mine_rarity_;
     uint32_t mine_key_;
     uint32_t mine_size_;
-    bool benchmark_mode_;
+    RunMode run_mode_;
 };
 
 const uint64_t RARITY = 16384;

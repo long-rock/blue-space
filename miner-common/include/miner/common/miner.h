@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -34,6 +35,8 @@ struct WorkItem
 class Miner
 {
   public:
+    using Ptr = std::shared_ptr<Miner>;
+
     virtual ~Miner() = default;
     virtual void mine_batch(std::vector<WorkItem> &items, uint32_t rarity, uint32_t key) const = 0;
 };

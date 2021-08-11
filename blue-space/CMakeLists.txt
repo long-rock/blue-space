@@ -1,11 +1,26 @@
+find_package(Boost REQUIRED)
+
 set(
-    CPP_SOURCE
-    "src/main.cc"
+    LIB_CPP_SOURCE
+    "lib/rpcserver.cpp"
+    "lib/session.cpp"
+    "lib/listener.cpp"
+    "lib/server.cpp"
+    "lib/application.cpp"
 )
-add_executable(blue-space ${CPP_SOURCE})
-target_link_libraries(blue-space PUBLIC miner-common miner-cpu explorer)
+add_library(application STATIC ${LIB_CPP_SOURCE})
+target_include_directories(application PUBLIC "include")
+target_compile_definitions(application PUBLIC RAPIDJSON_HAS_STDSTRING=1)
+target_link_libraries(application PUBLIC miner-common miner-cpu explorer )
 
 if(CUDA_MINER)
-    target_compile_definitions(blue-space PUBLIC HAS_CUDA_MINER)
-    target_link_libraries(blue-space PUBLIC miner-cuda)
+    target_compile_definitions(application PUBLIC HAS_CUDA_MINER)
+    target_link_libraries(application PUBLIC miner-cuda)
 endif()
+
+set(
+    EXE_CPP_SOURCE
+    "src/main.cc"
+)
+add_executable(blue-space ${EXE_CPP_SOURCE})
+target_link_libraries(blue-space PUBLIC application)
