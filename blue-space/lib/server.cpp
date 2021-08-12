@@ -18,7 +18,7 @@ using namespace application;
 
 using tcp = boost::asio::ip::tcp;
 
-Server::Server(std::shared_ptr<RpcServer> rpc) : rpc_(rpc)
+Server::Server(std::shared_ptr<rpc::Server> rpc) : rpc_(rpc)
 {
 }
 

@@ -141,8 +141,8 @@ class BlueSpace
         {
             run_benchmark(miner);
         } else if (run_mode_ == RunMode::Stateless) {
-            auto rpc = std::make_shared<application::RpcServer>(miner);
-            application::Application app(rpc);
+            application::Application app{};
+            app.initialize(miner);
             app.start();
         }
     }

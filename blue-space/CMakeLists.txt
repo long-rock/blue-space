@@ -1,8 +1,11 @@
 find_package(Boost REQUIRED)
+find_package(JsonRpcLean REQUIRED)
 
 set(
     LIB_CPP_SOURCE
-    "lib/rpcserver.cpp"
+    "lib/api/stateless.cpp"
+    "lib/rpc/stateless.cpp"
+    "lib/rpc/server.cpp"
     "lib/session.cpp"
     "lib/listener.cpp"
     "lib/server.cpp"
@@ -11,7 +14,7 @@ set(
 add_library(application STATIC ${LIB_CPP_SOURCE})
 target_include_directories(application PUBLIC "include")
 target_compile_definitions(application PUBLIC RAPIDJSON_HAS_STDSTRING=1)
-target_link_libraries(application PUBLIC miner-common miner-cpu explorer )
+target_link_libraries(application PUBLIC miner-common miner-cpu explorer JsonRpcLean::Server)
 
 if(CUDA_MINER)
     target_compile_definitions(application PUBLIC HAS_CUDA_MINER)
