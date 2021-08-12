@@ -14,23 +14,15 @@ const uint32_t MPZ_BIT_SIZE = 512;
 namespace internal
 {
 
-void field_mul(mpz_t p, mpz_srcptr a, mpz_srcptr b, mpz_t t)
-{
-    mpz_mul(t, a, b);
-    mpz_tdiv_r(p, t, miner::common::P.get_mpz_t());
-}
-
 void field_add(mpz_t p, mpz_srcptr a, mpz_srcptr b, mpz_t t)
 {
     mpz_add(t, a, b);
     mpz_tdiv_r(p, t, miner::common::P.get_mpz_t());
 }
 
-void fifth_power(mpz_t r, mpz_srcptr n, mpz_t s, mpz_t f, mpz_t t)
+void fifth_power(mpz_t r, mpz_srcptr n)
 {
-    field_mul(s, n, n, t);
-    field_mul(f, s, s, t);
-    field_mul(r, f, n, t);
+   mpz_powm_ui(r, n, 5, miner::common::P.get_mpz_t());
 }
 
 } // namespace internal
@@ -75,13 +67,13 @@ void miner::cpu::Sponge::mix(mpz_srcptr key)
     {
         internal::field_add(t0_, key, l_, t1_);
         internal::field_add(t1_, t0_, c.get_mpz_t(), t2_);
-        internal::fifth_power(t0_, t1_, t2_, t3_, t4_);
+        internal::fifth_power(t0_, t1_);
         internal::field_add(t1_, t0_, r_, t2_);
         mpz_set(r_, l_);
         mpz_set(l_, t1_);
     }
     internal::field_add(t0_, key, l_, t2_);
-    internal::fifth_power(t1_, t0_, t2_, t3_, t4_);
+    internal::fifth_power(t1_, t0_);
     internal::field_add(t0_, t1_, r_, t2_);
     mpz_set(r_, t0_);
 }
