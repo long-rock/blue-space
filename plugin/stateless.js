@@ -11,15 +11,31 @@
 import { html, render, useState, useEffect, useLayoutEffect } from 'https://unpkg.com/htm/preact/standalone.module.js';
 import { locationIdFromDecStr } from 'https://cdn.skypack.dev/@darkforest_eth/serde';
 
-const { MinerManager: Miner, SwissCheesePattern, SpiralPattern } = df.getConstructors();
+const { MinerManager: Miner, SwissCheesePattern, SpiralPattern, TowardsCenterPattern } = df.getConstructors();
 
 const NEW_CHUNK = 'DiscoveredNewChunk';
 
+function getChunkSize(chunkSize) {
+  switch (chunkSize) {
+    case 'large':
+      return 1024;
+    case 'medium':
+      return 512;
+    case 'small':
+      return 256;
+   default:
+      return 128;
+  }
+}
+
 function getPattern(coords, patternType, chunkSize) {
+  const chunkSizeTiles = getChunkSize(chunkSize)
   if (patternType === 'swiss') {
-    return new SwissCheesePattern(coords, chunkSize);
+    return new SwissCheesePattern(coords, chunkSizeTiles);
+  } else if (patternType === 'spiral') {
+    return new SpiralPattern(coords, chunkSizeTiles);
   } else {
-    return new SpiralPattern(coords, chunkSize);
+    return new TowardsCenterPattern(coords, chunkSizeTiles);
   }
 }
 
@@ -253,7 +269,8 @@ function App({
   };
   const [miners, setMiners] = useState(initialMiners);
   const [nextUrl, setNextUrl] = useState(null);
-  const [patternType, setPatternType] = useState('spiral');
+  const [patternType, setPatternType] = useState('center');
+  const [chunkSize, setChunkSize] = useState('small');
 
   const onChange = (evt) => {
     setNextUrl(evt.target.value);
@@ -261,7 +278,7 @@ function App({
 
   const add = () => {
     if (nextUrl) {
-      const miners = addMiner(nextUrl, patternType);
+      const miners = addMiner(nextUrl, patternType, chunkSize);
       setMiners(miners);
       setNextUrl(null);
     }
@@ -270,6 +287,10 @@ function App({
   const remove = (miner) => {
     const miners = removeMiner(miner);
     setMiners(miners);
+  };
+
+  const changeChunkSize = (evt) => {
+    setChunkSize(evt.target.value);
   };
 
   const changePattern = (evt) => {
@@ -288,7 +309,14 @@ function App({
           onChange=${onChange}
           placeholder="URL for explore server"
         />
+        <select style=${select} value=${chunkSize} onChange=${changeChunkSize}>
+          <option value="tiny">Tiny (Why not?)</option>
+          <option value="small">Small (The Default)</option>
+          <option value="medium">Medium (Four times as big)</option>
+          <option value="large">Large (It's a bad idea)</option>
+        </select>
         <select style=${select} value=${patternType} onChange=${changePattern}>
+          <option value="center">Towards Center</option>
           <option value="spiral">Spiral</option>
           <option value="swiss">Swiss</option>
         </select>
@@ -304,11 +332,10 @@ class RemoteExplorerPlugin {
     this.miners = [];
     this.id = 0;
 
-    this.addMiner('http://0.0.0.0:8000/mine', 'spiral', 256);
+    this.addMiner('http://0.0.0.0:8888/', 'center', 'small');
   }
 
-  addMiner = (url, patternType = 'spiral', chunkSize = 256) => {
-    // TODO: Somehow set a default coords
+  addMiner = (url, patternType = 'spiral', chunkSize = 'small') => {
     const pattern = getPattern({ x: 0, y: 0 }, patternType, chunkSize);
     const miner = Miner.create(
       df.getChunkStore(),
