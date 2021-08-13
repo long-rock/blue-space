@@ -52,11 +52,35 @@ void Session::stop()
 
 template <class B> void Session::handle_request(beast::http::request<B> &&request)
 {
+    BOOST_LOG_TRIVIAL(debug) << "session: handle request";
     if (on_request_)
     {
-        auto body = request.body();
-        (*on_request_)(body, shared_from_this());
+        BOOST_LOG_TRIVIAL(debug) << "session: method " << request.method();
+        if (request.method() == beast::http::verb::options)
+        {
+            return send_cors_response();
+        }
+        else
+        {
+            BOOST_LOG_TRIVIAL(debug) << "session: about to read body";
+            auto body = request.body();
+            BOOST_LOG_TRIVIAL(debug) << "session: body has size " << body.size();
+            (*on_request_)(body, shared_from_this());
+        }
     }
+}
+
+void Session::send_cors_response()
+{
+    beast::http::response<beast::http::string_body> res(std::piecewise_construct);
+    res.set(beast::http::field::server, SERVER_NAME);
+    res.set(beast::http::field::access_control_allow_origin, "*");
+    res.set(beast::http::field::access_control_allow_headers, "*");
+    res.set(beast::http::field::access_control_allow_methods, "*");
+    res.content_length(0);
+    res.keep_alive(true);
+    res.prepare_payload();
+    return send_message(std::move(res));
 }
 
 void Session::send_response(std::string_view response)
@@ -66,8 +90,12 @@ void Session::send_response(std::string_view response)
 
     const auto size = body.size();
 
+    BOOST_LOG_TRIVIAL(debug) << "session: response with size " << size;
     beast::http::response<beast::http::string_body> res(std::piecewise_construct, std::make_tuple(std::move(body)));
     res.set(beast::http::field::server, SERVER_NAME);
+    res.set(beast::http::field::access_control_allow_origin, "*");
+    res.set(beast::http::field::access_control_allow_headers, "*");
+    res.set(beast::http::field::access_control_allow_methods, "*");
     res.set(beast::http::field::content_type, "application/json");
     res.content_length(size);
     res.keep_alive(true);

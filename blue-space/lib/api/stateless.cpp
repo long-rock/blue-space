@@ -10,6 +10,9 @@ std::vector<miner::common::WorkItem> StatelessApi::mine_single(int64_t x, int64_
     bool inplace = size_u == batch_.size();
 
     std::size_t idx = 0;
+    if (!inplace) {
+        batch_ = {};
+    }
     for (std::size_t i = 0; i < size_u; ++i)
     {
         for (std::size_t j = 0; j < size_u; ++j)

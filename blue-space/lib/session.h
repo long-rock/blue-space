@@ -36,6 +36,7 @@ class Session : public std::enable_shared_from_this<Session>
     void handle_request(beast::http::request<B> &&request);
 
     void send_response(std::string_view response);
+    void send_cors_response();
 
     template<class Message>
     void send_message(Message &&message);

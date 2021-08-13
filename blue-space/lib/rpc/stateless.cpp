@@ -15,16 +15,19 @@ MineSingleRequest::MineSingleRequest(api::StatelessApi::Ptr api) : api_(std::mov
 {
 }
 
-namespace {
-    jsonrpc::Value::Struct item_to_json(const miner::common::WorkItem &item)
-    {
-        jsonrpc::Value::Struct r;
-        r["x"] = item.x;
-        r["y"] = item.y;
-        r["hash"] = item.hash;
-        return r;
-    }
+namespace
+{
+jsonrpc::Value::Struct item_to_json(const miner::common::WorkItem &item)
+{
+    jsonrpc::Value::Struct r;
+    jsonrpc::Value::Struct c;
+    c["x"] = item.x;
+    c["y"] = item.y;
+    r["coords"] = c;
+    r["hash"] = item.hash;
+    return r;
 }
+} // namespace
 
 outcome::result<jsonrpc::Value::Struct> MineSingleRequest::execute(const jsonrpc::Request::Parameters &params)
 {
@@ -71,15 +74,29 @@ outcome::result<jsonrpc::Value::Struct> MineSingleRequest::execute(const jsonrpc
     auto rarity = rarity_param.AsInteger64();
     auto key = key_param.AsInteger64();
 
+    BOOST_LOG_TRIVIAL(info) << "mine single: x=" << x << ", y=" << y << ", size=" << size << ", rarity=" << rarity
+                            << ", key=" << key;
     auto planets = api_->mine_single(x, y, size, rarity, key);
+    BOOST_LOG_TRIVIAL(info) << "mine single: found " << planets.size() << " planets";
 
     jsonrpc::Value::Struct result;
     jsonrpc::Value::Array json_planets;
-    for (auto &planet: planets)
+    for (auto &planet : planets)
     {
         auto json_planet = item_to_json(planet);
         json_planets.push_back(json_planet);
     }
-    result["planets"] = json_planets;
+    result["planetLocations"] = json_planets;
+
+    jsonrpc::Value::Struct bottom_left;
+    bottom_left["x"] = x;
+    bottom_left["y"] = y;
+
+    jsonrpc::Value::Struct chunk_footprint;
+    chunk_footprint["bottomLeft"] = bottom_left;
+    chunk_footprint["sideLength"] = size;
+
+    result["chunkFootprint"] = chunk_footprint;
+
     return outcome::success(result);
 }
