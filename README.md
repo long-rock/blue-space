@@ -13,7 +13,11 @@ with your distribution favourite package manager.
  * Boost.Log
  * [Google Test](https://github.com/google/googletest)
  * [Google Benchmark](https://github.com/google/benchmark)
- * [CLI11 1.9](https://github.com/CLIUtils/CLI11). Note that this project expects to find the header in `<CLI/CLI.hpp>`.
+ * [CLI11 1.9](https://github.com/CLIUtils/CLI11). Note that this project
+   expects to find the header in `<CLI/CLI.hpp>`.
+ * [Json Rpc Lean](https://github.com/uskr/jsonrpc-lean). Download the source
+   on your file system, then set the `JSONRPCLEAN_INCLUDE_DIR` configuration
+   variable to the path to jsonrpc-lean `include/` directory.
 
 To build the GPU miner, you need the following additional dependencies.
 
@@ -47,7 +51,8 @@ Configure `cmake`, run the following from the `blue-space` directory.
         -S . \ # the source location
         -B buildir \ # the build directory
         -DCMAKE_BUILD_TYPE=Release \ # make release
-        -DBUILD_TEST=ON \ # build tests, requires gtest and benchmark
+        -DJSONRPCLEAN_INCLUDE_DIR=/path/to/jsonrpc-lean \ # jsonrpc lean include directory
+        -DBUILD_TEST=OFF \ # build tests, requires gtest and benchmark
         -DCUDA_MINER=ON \ # enable cuda miner
         -DCUDA_HOST_COMPILER=/usr/bin/g++-10 \ # only needed if you have g++ 11 on your system
         -DCMAKE_CUDA_ARCHITECTURES=35 \ # cuda architecture, depends on your gpu
