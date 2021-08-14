@@ -269,7 +269,7 @@ function App({
   };
   const [miners, setMiners] = useState(initialMiners);
   const [nextUrl, setNextUrl] = useState(null);
-  const [patternType, setPatternType] = useState('center');
+  const [patternType, setPatternType] = useState('spiral');
   const [chunkSize, setChunkSize] = useState('small');
 
   const onChange = (evt) => {
@@ -332,7 +332,7 @@ class RemoteExplorerPlugin {
     this.miners = [];
     this.id = 0;
 
-    this.addMiner('http://0.0.0.0:8888/', 'center', 'small');
+    this.addMiner('http://0.0.0.0:8888/', 'spiral', 'small');
   }
 
   addMiner = (url, patternType = 'spiral', chunkSize = 'small') => {
