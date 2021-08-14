@@ -11,9 +11,14 @@
 
 #include <chrono>
 #include <cstdint>
-#include <optional>
 #include <iostream>
 #include <memory>
+#include <optional>
+
+#define _STRINGIZE(x) #x
+#define STRINGIZE(x) _STRINGIZE(x)
+
+constexpr char version[] = STRINGIZE(BLUE_SPACE_VERSION);
 
 class BlueSpace
 {
@@ -39,6 +44,9 @@ class BlueSpace
         bool print_help = false;
         app.set_help_flag();
         app.add_flag("-h,--help", print_help, "Show help");
+
+        bool print_version = false;
+        app.add_flag("--version", print_version, "Show version");
 
         bool benchmark_mode = false;
         app.add_flag("--benchmark", benchmark_mode, "Run a simple benchmark");
@@ -84,6 +92,16 @@ class BlueSpace
         if (print_help)
         {
             std::cout << app.help() << std::endl;
+            return false;
+        }
+
+        if (print_version)
+        {
+#if HAS_CUDA_MINER
+            std::cout << version << "-cuda" << std::endl;
+#else
+            std::cout << version << std::endl;
+#endif
             return false;
         }
 

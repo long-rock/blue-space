@@ -25,7 +25,9 @@ if(BUILD_TEST)
     add_executable(test-miner-cuda ${TEST_SOURCE})
     target_link_libraries(test-miner-cuda PRIVATE miner-cuda GTest::GTest GTest::Main)
     add_test(test-miner-cuda test-miner-cuda)
+endif()
 
+if(BUILD_BENCHMARK)
     set(
         BENCHMARK_SOURCE
         "test/cuda_miner_benchmark.cc"

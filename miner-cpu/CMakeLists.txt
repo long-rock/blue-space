@@ -21,7 +21,9 @@ if(BUILD_TEST)
     add_executable(test-miner-cpu ${TEST_SOURCE})
     target_link_libraries(test-miner-cpu PRIVATE miner-cpu GTest::GTest GTest::Main)
     add_test(test-miner-cpu test-miner-cpu)
+endif()
 
+if(BUILD_BENCHMARK)
     set(
         BENCHMARK_SOURCE
         "test/cpu_miner_benchmark.cc"
