@@ -13,10 +13,14 @@ namespace cpu
 
 struct CpuMinerOptions
 {
-  uint32_t num_threads;
+    uint32_t num_threads;
 
-  CpuMinerOptions() : num_threads(0) {}
-  CpuMinerOptions(uint32_t n) : num_threads(n) {}
+    CpuMinerOptions() : num_threads(0)
+    {
+    }
+    CpuMinerOptions(uint32_t n) : num_threads(n)
+    {
+    }
 };
 
 class CpuMiner : public common::Miner
@@ -24,7 +28,8 @@ class CpuMiner : public common::Miner
   public:
     CpuMiner(const CpuMinerOptions &options);
     ~CpuMiner();
-    void mine_batch(std::vector<common::WorkItem> &items, uint32_t rarity, uint32_t key) const override;
+
+    void mine(const common::ChunkFootprint &chunk, uint32_t rarity, uint32_t key, std::vector<common::PlanetLocation> &result) override;
   private:
     CpuMinerOptions options_;
 };

@@ -16,6 +16,8 @@ class Sponge
     void reset();
     void inject(mpz_srcptr x);
     void mix(mpz_srcptr key);
+    void save();
+    void restore();
     void result(mpz_t out) const;
 
     void debug() const;
@@ -23,6 +25,9 @@ class Sponge
   private:
     mpz_t l_;
     mpz_t r_;
+
+    mpz_t snap_l_;
+    mpz_t snap_r_;
 
     mpz_t t0_;
     mpz_t t1_;

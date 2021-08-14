@@ -15,18 +15,13 @@ static void cpu_miner_benchmark(benchmark::State &state)
 {
     auto miner = miner::cpu::CpuMiner(miner::cpu::CpuMinerOptions());
 
-    std::vector<miner::common::WorkItem> work_items;
-    for (int64_t x = -DEFAULT_SIZE / 2; x < DEFAULT_SIZE / 2; x++)
-    {
-        for (int64_t y = -DEFAULT_SIZE / 2; x < DEFAULT_SIZE / 2; x++)
-        {
-            work_items.push_back(miner::common::WorkItem{.x = x, .y = y});
-        }
-    }
+    std::vector<miner::common::PlanetLocation> planets;
+    miner::common::Coordinate bottom_left(-128, 128);
+    miner::common::ChunkFootprint chunk(bottom_left, 256);
 
     for (auto _ : state)
     {
-        miner.mine_batch(work_items, RARITY, KEY);
+        miner.mine(chunk, RARITY, KEY, planets);
     }
 }
 

@@ -4,6 +4,7 @@
 #include <boost/log/trivial.hpp>
 #include <jsonrpc-lean/dispatcher.h>
 
+using namespace miner::common;
 using namespace application::rpc::stateless;
 
 void application::rpc::stateless::register_methods(rpc::Server::Ptr server, api::StatelessApi::Ptr api)
@@ -17,14 +18,14 @@ MineSingleRequest::MineSingleRequest(api::StatelessApi::Ptr api) : api_(std::mov
 
 namespace
 {
-jsonrpc::Value::Struct item_to_json(const miner::common::WorkItem &item)
+jsonrpc::Value::Struct planet_to_json(const PlanetLocation &planet)
 {
     jsonrpc::Value::Struct r;
     jsonrpc::Value::Struct c;
-    c["x"] = item.x;
-    c["y"] = item.y;
+    c["x"] = planet.coordinate.x;
+    c["y"] = planet.coordinate.y;
     r["coords"] = c;
-    r["hash"] = item.hash;
+    r["hash"] = planet.hash;
     return r;
 }
 } // namespace
@@ -83,7 +84,7 @@ outcome::result<jsonrpc::Value::Struct> MineSingleRequest::execute(const jsonrpc
     jsonrpc::Value::Array json_planets;
     for (auto &planet : planets)
     {
-        auto json_planet = item_to_json(planet);
+        auto json_planet = planet_to_json(planet);
         json_planets.push_back(json_planet);
     }
     result["planetLocations"] = json_planets;

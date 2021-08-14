@@ -1,8 +1,5 @@
 #include "application/application.h"
 
-#include "explorer/explorer.h"
-#include "explorer/storage.h"
-
 #include "miner/common/miner.h"
 #include "miner/cpu/miner.h"
 #ifdef HAS_CUDA_MINER
@@ -14,6 +11,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <optional>
 #include <iostream>
 #include <memory>
 
@@ -115,10 +113,13 @@ class BlueSpace
         if (benchmark_mode)
         {
             run_mode_ = RunMode::Benchmark;
-        } else if (stateless_mode)
+        }
+        else if (stateless_mode)
         {
             run_mode_ = RunMode::Stateless;
-        } else {
+        }
+        else
+        {
             // default to stateless
             run_mode_ = RunMode::Stateless;
         }
@@ -145,7 +146,9 @@ class BlueSpace
         if (run_mode_ == RunMode::Benchmark)
         {
             run_benchmark(miner);
-        } else if (run_mode_ == RunMode::Stateless) {
+        }
+        else if (run_mode_ == RunMode::Stateless)
+        {
             application::Application::Options app_options;
             app_options.http_port = http_port_;
             application::Application app(app_options);
@@ -156,37 +159,22 @@ class BlueSpace
 
     void run_benchmark(std::shared_ptr<miner::common::Miner> &miner)
     {
-        miner::common::Coordinate origin(0, 0);
-        auto storage = std::make_shared<explorer::InMemoryStorage>();
-        auto explorer = std::make_shared<explorer::SpiralExplorer>(storage, origin);
-
-        std::vector<miner::common::WorkItem> batch;
-
-        for (std::size_t i = 0; i < mine_size_; ++i)
-        {
-            // just crash if there's no value
-            auto next = explorer->next().value();
-            batch.push_back(miner::common::WorkItem{.x = next.x, .y = next.y, .is_planet = false, .hash = ""});
-        }
+        miner::common::Coordinate bottom_left(-mine_size_ / 2, -mine_size_ / 2);
+        miner::common::ChunkFootprint chunk(bottom_left, mine_size_);
+        std::vector<miner::common::PlanetLocation> result;
 
         auto start = timer_clock::now();
         BOOST_LOG_TRIVIAL(info) << "Mine batch size=" << mine_size_ << ", rarity=" << mine_rarity_
                                 << ", key=" << mine_key_;
-        miner->mine_batch(batch, mine_rarity_, mine_key_);
-        auto end_no_storage = timer_clock::now();
-        for (auto &item : batch)
-        {
-            storage->store(item);
-        }
+        miner->mine(chunk, mine_rarity_, mine_key_, result);
         auto end = timer_clock::now();
         auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        auto time_no_storage_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end_no_storage - start).count();
         if (time_ms > 0)
         {
-            double rate = mine_size_ / (time_ms / 1000.0);
-            double rate_no_storage = mine_size_ / (time_no_storage_ms / 1000.0);
-            BOOST_LOG_TRIVIAL(info) << "Mined " << mine_size_ << " hashes in " << time_ms << " ms (" << time_no_storage_ms << " ms without storage). Hash rate: " << rate
-                                    << " H/s, hash rate (no storage): " << rate_no_storage << " H/s";
+            double num_hashes = mine_size_ * mine_size_;
+            double rate = num_hashes / (time_ms / 1000.0);
+            BOOST_LOG_TRIVIAL(info) << "Mined " << num_hashes << " hashes in " << time_ms << " ms. Hash rate: " << rate
+                                    << " H/s";
         }
     }
 

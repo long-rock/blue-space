@@ -2,9 +2,9 @@
 
 #include "miner/common/constants.h"
 
+#include <boost/log/trivial.hpp>
 #include <cgbn/cgbn.h>
 #include <gmpxx.h>
-#include <boost/log/trivial.hpp>
 
 // NEEDS TO BE INCLUDED AFTER CGBN AND GMP
 #include "cu_helpers.h"
@@ -212,8 +212,8 @@ __global__ void mine_batch_kernel(cgbn_error_report_t *report, CudaWorkItem *bat
 }
 
 template <class bn_params>
-void run_mine_batch(int device, const CudaMinerOptions &options, std::vector<WorkItem> &batch, const MimcParams &mimc,
-                    const bn_mem_t &planet_threshold, const bn_mem_t &key)
+void run_mine_batch(int device, const CudaMinerOptions &options, const ChunkFootprint &chunk, const MimcParams &mimc,
+                    const bn_mem_t &planet_threshold, const bn_mem_t &key, std::vector<PlanetLocation> &result)
 {
     cgbn_error_report_t *bn_report;
 
@@ -225,40 +225,51 @@ void run_mine_batch(int device, const CudaMinerOptions &options, std::vector<Wor
     CUDA_CHECK(cudaMemcpy(d_C, mimc.C, sizeof(bn_mem_t) * mimc.C_size, cudaMemcpyHostToDevice));
 
     CudaWorkItem *d_batch, *cpu_batch;
-    cpu_batch = static_cast<CudaWorkItem *>(malloc(sizeof(CudaWorkItem) * batch.size()));
-    CUDA_CHECK(cudaMalloc(&d_batch, sizeof(CudaWorkItem) * batch.size()));
+    std::size_t batch_size = chunk.side_length * chunk.side_length;
+    cpu_batch = static_cast<CudaWorkItem *>(malloc(sizeof(CudaWorkItem) * batch_size));
+    CUDA_CHECK(cudaMalloc(&d_batch, sizeof(CudaWorkItem) * batch_size));
 
-    for (std::size_t i = 0; i < batch.size(); ++i)
+    std::size_t i = 0;
+    for (int64_t x = chunk.bottom_left.x; x < chunk.bottom_left.x + chunk.side_length; ++x)
     {
-        cpu_batch[i].x = batch[i].x;
-        cpu_batch[i].y = batch[i].y;
-        cpu_batch[i].is_planet = false;
+        for (int64_t y = chunk.bottom_left.y; y < chunk.bottom_left.y + chunk.side_length; ++y)
+        {
+            cpu_batch[i].x = x;
+            cpu_batch[i].y = y;
+            cpu_batch[i].is_planet = false;
+            i += 1;
+        }
     }
 
-    CUDA_CHECK(cudaMemcpy(d_batch, cpu_batch, sizeof(CudaWorkItem) * batch.size(), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_batch, cpu_batch, sizeof(CudaWorkItem) * batch_size, cudaMemcpyHostToDevice));
 
     uint32_t items_per_block = options.thread_work_size * options.block_size;
     // grid_size = ceil(size / items_per_block)
-    uint32_t grid_size = (batch.size() + items_per_block - 1) / items_per_block;
+    uint32_t grid_size = (batch_size + items_per_block - 1) / items_per_block;
     dim3 block_size(bn_params::TPI, options.block_size);
 
-    BOOST_LOG_TRIVIAL(info) << "Starting miner kernel. grid_size=" << grid_size << ", block_size=" << options.block_size;
-    mine_batch_kernel<bn_params><<<grid_size, block_size>>>(bn_report, d_batch, batch.size(), options.thread_work_size,
+    BOOST_LOG_TRIVIAL(info) << "Starting miner kernel. grid_size=" << grid_size
+                            << ", block_size=" << options.block_size;
+    mine_batch_kernel<bn_params><<<grid_size, block_size>>>(bn_report, d_batch, batch_size, options.thread_work_size,
                                                             planet_threshold, key, mimc.P, d_C, mimc.C_size);
 
     CUDA_CHECK(cudaDeviceSynchronize());
     CUDA_CHECK(cudaGetLastError());
     CGBN_CHECK(bn_report);
 
-    CUDA_CHECK(cudaMemcpy(cpu_batch, d_batch, sizeof(CudaWorkItem) * batch.size(), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(cpu_batch, d_batch, sizeof(CudaWorkItem) * batch_size, cudaMemcpyDeviceToHost));
 
     mpz_class planet_hash;
-    for (std::size_t i = 0; i < batch.size(); ++i)
+    for (std::size_t i = 0; i < batch_size; ++i)
     {
-        assert(batch[i].x == cpu_batch[i].x && batch[i].y == cpu_batch[i].y);
-        batch[i].is_planet = cpu_batch[i].is_planet;
-        to_mpz(planet_hash.get_mpz_t(), cpu_batch[i].hash);
-        batch[i].hash = planet_hash.get_str();
+        if (cpu_batch[i].is_planet)
+        {
+            to_mpz(planet_hash.get_mpz_t(), cpu_batch[i].hash);
+            Coordinate coord(cpu_batch[i].x, cpu_batch[i].y);
+            std::string hash = planet_hash.get_str();
+            PlanetLocation location(std::move(coord), std::move(hash));
+            result.push_back(location);
+        }
     }
 
     // free up memory
@@ -269,7 +280,7 @@ void run_mine_batch(int device, const CudaMinerOptions &options, std::vector<Wor
 
 } // namespace kernel
 
-void CudaMiner::mine_batch(std::vector<common::WorkItem> &items, uint32_t rarity, uint32_t key) const
+void CudaMiner::mine(const ChunkFootprint &chunk, uint32_t rarity, uint32_t key, std::vector<PlanetLocation> &result)
 {
     kernel::bn_mem_t planet_threshold_bn, key_bn;
 
@@ -297,5 +308,5 @@ void CudaMiner::mine_batch(std::vector<common::WorkItem> &items, uint32_t rarity
     };
 
     typedef kernel::BnParams<32> bn_params_32;
-    kernel::run_mine_batch<bn_params_32>(device_, options_, items, mimc, planet_threshold_bn, key_bn);
+    kernel::run_mine_batch<bn_params_32>(device_, options_, chunk, mimc, planet_threshold_bn, key_bn, result);
 }

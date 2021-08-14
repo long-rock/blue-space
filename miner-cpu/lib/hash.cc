@@ -31,6 +31,8 @@ miner::cpu::Sponge::Sponge()
 {
     mpz_init2(l_, MPZ_BIT_SIZE);
     mpz_init2(r_, MPZ_BIT_SIZE);
+    mpz_init2(snap_l_, MPZ_BIT_SIZE);
+    mpz_init2(snap_r_, MPZ_BIT_SIZE);
     mpz_init2(t0_, MPZ_BIT_SIZE);
     mpz_init2(t1_, MPZ_BIT_SIZE);
     mpz_init2(t2_, MPZ_BIT_SIZE);
@@ -42,6 +44,8 @@ miner::cpu::Sponge::~Sponge()
 {
     mpz_clear(l_);
     mpz_clear(r_);
+    mpz_clear(snap_l_);
+    mpz_clear(snap_r_);
     mpz_clear(t0_);
     mpz_clear(t1_);
     mpz_clear(t2_);
@@ -76,6 +80,18 @@ void miner::cpu::Sponge::mix(mpz_srcptr key)
     internal::fifth_power(t1_, t0_);
     internal::field_add(t0_, t1_, r_, t2_);
     mpz_set(r_, t0_);
+}
+
+void miner::cpu::Sponge::save()
+{
+    mpz_set(snap_l_, l_);
+    mpz_set(snap_r_, r_);
+}
+
+void miner::cpu::Sponge::restore()
+{
+    mpz_set(l_, snap_l_);
+    mpz_set(r_, snap_r_);
 }
 
 void miner::cpu::Sponge::result(mpz_t out) const

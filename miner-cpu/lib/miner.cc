@@ -3,9 +3,10 @@
 #include "hash.h"
 #include "miner/common/constants.h"
 
+#include <boost/assert.hpp>
+#include <boost/log/trivial.hpp>
 #include <gmpxx.h>
 #include <omp.h>
-#include <boost/log/trivial.hpp>
 
 #include <memory>
 #include <vector>
@@ -28,15 +29,16 @@ mpz_class wrap_coordinate(int64_t c)
 
 } // namespace internal
 
-miner::cpu::CpuMiner::CpuMiner(const CpuMinerOptions &options) : options_(options)
+CpuMiner::CpuMiner(const CpuMinerOptions &options) : options_(options)
 {
 }
 
-miner::cpu::CpuMiner::~CpuMiner()
+CpuMiner::~CpuMiner()
 {
 }
 
-void miner::cpu::CpuMiner::mine_batch(std::vector<common::WorkItem> &items, uint32_t rarity, uint32_t key) const
+void CpuMiner::mine(const common::ChunkFootprint &chunk, uint32_t rarity, uint32_t key,
+                    std::vector<common::PlanetLocation> &result)
 {
     mpz_class key_(key);
     mpz_class rarity_(rarity);
@@ -49,15 +51,31 @@ void miner::cpu::CpuMiner::mine_batch(std::vector<common::WorkItem> &items, uint
         omp_set_num_threads(options_.num_threads);
     }
 
-    #pragma omp parallel for default(none) shared(key_, threshold, items) private(sponge)
-    for (auto &work_item : items)
+    miner::cpu::Sponge();
+#pragma omp parallel for default(none) shared(chunk, result, threshold, key_) private(sponge)
+    for (int64_t x = chunk.bottom_left.x; x < chunk.bottom_left.x + chunk.side_length; ++x)
     {
-        mpz_class planet_hash;
-        mpz_class x_ = internal::wrap_coordinate(work_item.x);
-        mpz_class y_ = internal::wrap_coordinate(work_item.y);
-        miner::cpu::mimc_hash(sponge, planet_hash.get_mpz_t(), x_.get_mpz_t(), y_.get_mpz_t(), key_.get_mpz_t());
-        auto is_planet = miner::cpu::is_planet(planet_hash.get_mpz_t(), threshold.get_mpz_t());
-        work_item.hash = planet_hash.get_str();
-        work_item.is_planet = is_planet;
+        mpz_class x_ = internal::wrap_coordinate(x);
+        sponge.reset();
+        sponge.inject(x_.get_mpz_t());
+        sponge.mix(key_.get_mpz_t());
+        sponge.save();
+        for (int64_t y = chunk.bottom_left.y; y < chunk.bottom_left.y + chunk.side_length; ++y)
+        {
+            mpz_class planet_hash;
+            sponge.restore();
+            mpz_class y_ = internal::wrap_coordinate(y);
+            sponge.inject(y_.get_mpz_t());
+            sponge.mix(key_.get_mpz_t());
+            sponge.result(planet_hash.get_mpz_t());
+            auto is_planet = miner::cpu::is_planet(planet_hash.get_mpz_t(), threshold.get_mpz_t());
+            if (is_planet)
+            {
+                Coordinate coord(x, y);
+                std::string hash = planet_hash.get_str();
+                PlanetLocation location(std::move(coord), std::move(hash));
+                result.push_back(location);
+            }
+        }
     }
 }
