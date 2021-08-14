@@ -13,13 +13,19 @@ namespace application
 class Application
 {
   public:
-    Application();
+    struct Options
+    {
+        uint32_t http_port;
+    };
+
+    Application(Options options);
 
     void initialize(miner::common::Miner::Ptr miner);
 
     void start();
 
   private:
+    Options options_;
     api::StatelessApi::Ptr stateless_;
     rpc::Server::Ptr rpc_;
     Server::Ptr server_;

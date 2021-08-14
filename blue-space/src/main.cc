@@ -48,6 +48,9 @@ class BlueSpace
         bool stateless_mode = false;
         app.add_flag("--stateless", stateless_mode, "Run stateless server");
 
+        std::optional<uint32_t> http_port;
+        app.add_option("--http-port", http_port, "Set the http port used by the rpc server");
+
         bool use_cpu_miner = false;
         app.add_flag("--cpu", use_cpu_miner, "Use CPU miner");
 
@@ -85,6 +88,8 @@ class BlueSpace
             std::cout << app.help() << std::endl;
             return false;
         }
+
+        http_port_ = http_port.value_or(8888);
 
         if (use_cuda_miner)
         {
@@ -141,7 +146,9 @@ class BlueSpace
         {
             run_benchmark(miner);
         } else if (run_mode_ == RunMode::Stateless) {
-            application::Application app{};
+            application::Application::Options app_options;
+            app_options.http_port = http_port_;
+            application::Application app(app_options);
             app.initialize(miner);
             app.start();
         }
@@ -184,6 +191,7 @@ class BlueSpace
     }
 
   private:
+    uint32_t http_port_;
     MinerType miner_type_;
     miner::cpu::CpuMinerOptions cpu_miner_options_;
 #if HAS_CUDA_MINER

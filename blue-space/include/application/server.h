@@ -18,7 +18,7 @@ class Server : public std::enable_shared_from_this<Server>
 
     Server(rpc::Server::Ptr rpc);
 
-    void start();
+    void start(unsigned short port);
 
   private:
     void handle_request(std::string_view request, std::shared_ptr<Session> session);

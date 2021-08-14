@@ -22,11 +22,10 @@ Server::Server(std::shared_ptr<rpc::Server> rpc) : rpc_(rpc)
 {
 }
 
-void Server::start()
+void Server::start(unsigned short port)
 {
     auto ioc = std::make_shared<boost::asio::io_context>();
     auto address = boost::asio::ip::make_address("0.0.0.0");
-    unsigned short port = 8888;
 
     BOOST_LOG_TRIVIAL(info) << "Starting http server on " << address << ":" << port;
 
