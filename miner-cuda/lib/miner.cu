@@ -260,6 +260,11 @@ void run_mine_batch(int device, const CudaMinerOptions &options, std::vector<Wor
         to_mpz(planet_hash.get_mpz_t(), cpu_batch[i].hash);
         batch[i].hash = planet_hash.get_str();
     }
+
+    // free up memory
+    CUDA_CHECK(cudaFree(d_C));
+    free(cpu_batch);
+    CUDA_CHECK(cudaFree(d_batch));
 }
 
 } // namespace kernel
