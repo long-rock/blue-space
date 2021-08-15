@@ -84,8 +84,7 @@ void miner::cpu::hash::Sponge::reset()
 
 void miner::cpu::hash::Sponge::inject(mpz_srcptr x)
 {
-    mpz_add(t0_, l_, x);
-    mpz_tdiv_r(l_, t0_, miner::common::P.get_mpz_t());
+    internal::field_add(l_, l_, x, t0_);
 }
 
 void miner::cpu::hash::Sponge::mix(mpz_srcptr key)
