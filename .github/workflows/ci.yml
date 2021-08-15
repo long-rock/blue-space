@@ -1,10 +1,6 @@
 name: Build and release miner
 
 on:
-  push:
-    branches:
-      - main
-      - develop
   pull_request:
     branches:
       - main
