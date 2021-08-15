@@ -5,11 +5,34 @@
 
 #include "miner/common/constants.h"
 
-using namespace miner::cpu;
+using namespace miner::common;
+using namespace miner::cpu::hash;
 
 // P needs around 254 bits of storage.
 // Use 512 bits integers to avoid overflows.
 const uint32_t MPZ_BIT_SIZE = 512;
+
+void miner::cpu::hash::init_mpz(mpz_t n)
+{
+    mpz_init2(n, MPZ_BIT_SIZE);
+}
+
+void miner::cpu::hash::realloc_mpz(mpz_t n)
+{
+    mpz_realloc2(n, MPZ_BIT_SIZE);
+}
+
+void miner::cpu::hash::wrap_coordinate(mpz_t w, int64_t c)
+{
+    if (c >= 0)
+    {
+        mpz_set_ui(w, static_cast<uint32_t>(c));
+        return;
+    }
+    uint32_t c_ = static_cast<uint32_t>(-c);
+    mpz_sub_ui(w, P.get_mpz_t(), c_);
+}
+
 
 namespace internal
 {
@@ -27,20 +50,20 @@ void fifth_power(mpz_t r, mpz_srcptr n)
 
 } // namespace internal
 
-miner::cpu::Sponge::Sponge()
+miner::cpu::hash::Sponge::Sponge()
 {
-    mpz_init2(l_, MPZ_BIT_SIZE);
-    mpz_init2(r_, MPZ_BIT_SIZE);
-    mpz_init2(snap_l_, MPZ_BIT_SIZE);
-    mpz_init2(snap_r_, MPZ_BIT_SIZE);
-    mpz_init2(t0_, MPZ_BIT_SIZE);
-    mpz_init2(t1_, MPZ_BIT_SIZE);
-    mpz_init2(t2_, MPZ_BIT_SIZE);
-    mpz_init2(t3_, MPZ_BIT_SIZE);
-    mpz_init2(t4_, MPZ_BIT_SIZE);
+    init_mpz(l_);
+    init_mpz(r_);
+    init_mpz(snap_l_);
+    init_mpz(snap_r_);
+    init_mpz(t0_);
+    init_mpz(t1_);
+    init_mpz(t2_);
+    init_mpz(t3_);
+    init_mpz(t4_);
 }
 
-miner::cpu::Sponge::~Sponge()
+miner::cpu::hash::Sponge::~Sponge()
 {
     mpz_clear(l_);
     mpz_clear(r_);
@@ -53,19 +76,19 @@ miner::cpu::Sponge::~Sponge()
     mpz_clear(t4_);
 }
 
-void miner::cpu::Sponge::reset()
+void miner::cpu::hash::Sponge::reset()
 {
     mpz_set_ui(l_, 0);
     mpz_set_ui(r_, 0);
 }
 
-void miner::cpu::Sponge::inject(mpz_srcptr x)
+void miner::cpu::hash::Sponge::inject(mpz_srcptr x)
 {
     mpz_add(t0_, l_, x);
     mpz_tdiv_r(l_, t0_, miner::common::P.get_mpz_t());
 }
 
-void miner::cpu::Sponge::mix(mpz_srcptr key)
+void miner::cpu::hash::Sponge::mix(mpz_srcptr key)
 {
     for (auto const &c : miner::common::C)
     {
@@ -82,43 +105,24 @@ void miner::cpu::Sponge::mix(mpz_srcptr key)
     mpz_set(r_, t0_);
 }
 
-void miner::cpu::Sponge::save()
+void miner::cpu::hash::Sponge::save()
 {
     mpz_set(snap_l_, l_);
     mpz_set(snap_r_, r_);
 }
 
-void miner::cpu::Sponge::restore()
+void miner::cpu::hash::Sponge::restore()
 {
     mpz_set(l_, snap_l_);
     mpz_set(r_, snap_r_);
 }
 
-void miner::cpu::Sponge::result(mpz_t out) const
+void miner::cpu::hash::Sponge::result(mpz_t out) const
 {
     mpz_set(out, l_);
 }
 
-void miner::cpu::Sponge::debug() const
-{
-    mpz_class l(l_);
-    mpz_class r(r_);
-    std::cout << "Sponge(l=" << l << ", r=" << r << ")" << std::endl;
-}
-
-void miner::cpu::mimc_hash(Sponge &sponge, mpz_t result, mpz_srcptr x, mpz_srcptr y, mpz_srcptr key)
-{
-    sponge.reset();
-    sponge.inject(x);
-    sponge.mix(key);
-
-    sponge.inject(y);
-    sponge.mix(key);
-
-    sponge.result(result);
-}
-
-bool miner::cpu::is_planet(mpz_srcptr planet_hash, mpz_srcptr threshold)
+bool miner::cpu::hash::is_planet(mpz_srcptr planet_hash, mpz_srcptr threshold)
 {
     return mpz_cmp(planet_hash, threshold) < 0;
 }

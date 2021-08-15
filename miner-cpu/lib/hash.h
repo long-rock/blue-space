@@ -2,10 +2,12 @@
 
 #include <gmpxx.h>
 
-namespace miner
+namespace miner::cpu::hash
 {
-namespace cpu
-{
+
+void init_mpz(mpz_t n);
+void realloc_mpz(mpz_t n);
+void wrap_coordinate(mpz_t w, int64_t c);
 
 class Sponge
 {
@@ -19,8 +21,6 @@ class Sponge
     void save();
     void restore();
     void result(mpz_t out) const;
-
-    void debug() const;
 
   private:
     mpz_t l_;
@@ -36,8 +36,6 @@ class Sponge
     mpz_t t4_;
 };
 
-void mimc_hash(Sponge &sponge, mpz_t result, mpz_srcptr x, mpz_srcptr y, mpz_srcptr key);
 bool is_planet(mpz_srcptr planet, mpz_srcptr threshold);
 
-} // namespace cpu
-} // namespace miner
+} // namespace miner::cpu::hash
