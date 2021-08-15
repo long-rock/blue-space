@@ -57,8 +57,8 @@ jobs:
       - name: Create .deb
         working-directory: ${{github.workspace}}/build
         run: cpack -G DEB
-      - name: Create release
-        uses: softprops/action-gh-release@v1
+      - name: Archive .deb
+        uses: actions/upload-artifact@v2
         with:
-          draft: true
-          files: ${{github.workspace}}/build/blue-space-*-Linux.deb
+          name: blue-space-cpu-deb
+          path: ${{github.workspace}}/build/blue-space-*-Linux-cpu.deb
