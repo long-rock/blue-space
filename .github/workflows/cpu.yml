@@ -15,7 +15,11 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        os:
+          - ubuntu-20.04
+    runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
@@ -29,17 +33,20 @@ jobs:
           pkg-config \
           rapidjson-dev \
           libgmp-dev \
+          libgmpxx4ldbl \
           libboost-container-dev \
           libboost-thread-dev \
           libboost-log-dev \
           libgtest-dev
       - name: Install CLI11
         run: |
+          cd /tmp && \
           wget https://github.com/CLIUtils/CLI11/releases/download/v1.9.1/CLI11.hpp && \
           sudo mkdir -p /usr/local/include/CLI && \
           sudo mv CLI11.hpp /usr/local/include/CLI/CLI.hpp
       - name: Install jsonrpc-lean
         run: |
+          cd /tmp && \
           wget https://github.com/uskr/jsonrpc-lean/releases/download/1.1.0/jsonrpc-lean-1.1.0.zip && \
           unzip jsonrpc-lean-1.1.0.zip && \
           sudo mv include/* /usr/local/include
@@ -60,5 +67,5 @@ jobs:
       - name: Archive .deb
         uses: actions/upload-artifact@v2
         with:
-          name: blue-space-cpu-deb
+          name: blue-space-cpu-${{matrix.os}}-deb
           path: ${{github.workspace}}/build/blue-space-*-Linux-cpu.deb
