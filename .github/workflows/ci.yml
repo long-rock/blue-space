@@ -1,0 +1,143 @@
+name: Build and release miner
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  BUILD_TYPE: Release
+  DEBIAN_FRONTEND: noninteractive
+
+jobs:
+  build-cpu:
+    name: "Build CPU miner package"
+    strategy:
+      matrix:
+        os:
+          - ubuntu-20.04
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && \
+          sudo apt-get install -yq \
+          build-essential \
+          wget \
+          unzip \
+          cmake \
+          file \
+          pkg-config \
+          rapidjson-dev \
+          libgmp-dev \
+          libgmpxx4ldbl \
+          libboost-container-dev \
+          libboost-thread-dev \
+          libboost-log-dev \
+          libgtest-dev
+      - name: Install CLI11
+        run: |
+          cd /tmp && \
+          wget https://github.com/CLIUtils/CLI11/releases/download/v1.9.1/CLI11.hpp && \
+          sudo mkdir -p /usr/local/include/CLI && \
+          sudo mv CLI11.hpp /usr/local/include/CLI/CLI.hpp
+      - name: Install jsonrpc-lean
+        run: |
+          cd /tmp && \
+          wget https://github.com/uskr/jsonrpc-lean/releases/download/1.1.0/jsonrpc-lean-1.1.0.zip && \
+          unzip jsonrpc-lean-1.1.0.zip && \
+          sudo mv include/* /usr/local/include
+      - name: Configure CMake
+        run: |
+          cmake -B ${{github.workspace}}/build \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -DCUDA_MINER=OFF \
+          -DBUILD_BENCHMARK=OFF
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      - name: Test
+        working-directory: ${{github.workspace}}/build
+        run: ctest -C ${{env.BUILD_TYPE}}
+      - name: Create .deb
+        working-directory: ${{github.workspace}}/build
+        run: cpack -G DEB
+      - name: Archive .deb
+        uses: actions/upload-artifact@v2
+        with:
+          name: blue-space-cpu-${{matrix.os}}-deb
+          path: ${{github.workspace}}/build/blue-space-*-Linux.deb
+  build-cuda:
+    name: "Build CUDA miner package"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - ubuntu20.04
+    container:
+      image: nvidia/cuda:11.4.1-devel-${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          apt-get update && \
+          apt-get install -yq \
+          build-essential \
+          wget \
+          unzip \
+          cmake \
+          file \
+          pkg-config \
+          rapidjson-dev \
+          libgmp-dev \
+          libgmpxx4ldbl \
+          libboost-container-dev \
+          libboost-thread-dev \
+          libboost-log-dev \
+          libgtest-dev
+      - name: Install CLI11
+        run: |
+          cd /tmp && \
+          wget https://github.com/CLIUtils/CLI11/releases/download/v1.9.1/CLI11.hpp && \
+          mkdir -p /usr/local/include/CLI && \
+          mv CLI11.hpp /usr/local/include/CLI/CLI.hpp
+      - name: Install jsonrpc-lean
+        run: |
+          cd /tmp && \
+          wget https://github.com/uskr/jsonrpc-lean/releases/download/1.1.0/jsonrpc-lean-1.1.0.zip && \
+          unzip jsonrpc-lean-1.1.0.zip && \
+          mv include/* /usr/local/include
+      - name: Install CGBN
+        run: |
+          cd /tmp && \
+          wget -O CGBN.zip https://github.com/NVlabs/CGBN/archive/2245cc145797d3405cb7d45ec1dec6acca8a7328.zip && \
+          unzip CGBN.zip && \
+          mv CGBN-*/include/* /usr/local/include
+      - name: Configure CMake
+        run: |
+          cmake -B ${{github.workspace}}/build \
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -DCUDA_MINER=ON \
+          -DCMAKE_CUDA_ARCHITECTURES=50 \
+          -DBUILD_BENCHMARK=OFF
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      - name: Test
+        if: ${{false}}
+        run: ctest -C ${{env.BUILD_TYPE}}
+      - name: Create .deb
+        run: |
+          cd ${{github.workspace}}/build && \
+          cpack -G DEB && \
+          mkdir /artifacts && \
+          mv blue-space-*-Linux.deb /artifacts
+      - name: Archive .deb
+        uses: actions/upload-artifact@v2
+        with:
+          name: blue-space-cuda-${{matrix.os}}-deb
+          path: /artifacts/blue-space-*-Linux.deb
