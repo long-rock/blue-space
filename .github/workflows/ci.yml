@@ -141,3 +141,30 @@ jobs:
         with:
           name: blue-space-cuda-${{matrix.os}}-deb
           path: /artifacts/blue-space-*-Linux.deb
+  publish-release:
+    name: "Publish release"
+    needs:
+      - build-cpu
+      - build-cuda
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: blue-space-cpu-ubuntu-20.04-deb
+          path: blue-space-cpu
+      - uses: actions/download-artifact@v2
+        with:
+          name: blue-space-cuda-ubuntu20.04-deb
+          path: blue-space-cuda
+      - name: Create blue-space-cpu archive
+        run: zip blue-space-cpu.zip blue-space-cpu/*
+      - name: Create blue-space-cuda archive
+        run: zip blue-space-cuda.zip blue-space-cuda/*
+      - name: Create draft release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{github.sha}}
+          draft: true
+          files: |
+            blue-space-cpu.zip
+            blue-space-cuda.zip
