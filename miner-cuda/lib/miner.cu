@@ -228,7 +228,7 @@ __global__ void mine_batch_kernel(cgbn_error_report_t *report, const ChunkFootpr
     sponge.mix(env, key, C, C_SIZE, P);
     sponge.save(env);
 
-    uint32_t start_size_y = blockIdx.y * (blockDim.y + items_per_thread) + items_per_thread * threadIdx.y;
+    uint32_t start_size_y = blockIdx.y * (blockDim.y + items_per_thread) + items_per_thread * (threadIdx.x / bn_params::TPI);
     for (uint32_t i = 0; i < items_per_thread; ++i)
     {
         if (start_size_y + i >= chunk.side_length)
@@ -246,8 +246,9 @@ __global__ void mine_batch_kernel(cgbn_error_report_t *report, const ChunkFootpr
 
         uint32_t result_idx = blockIdx.x + chunk.side_length * (start_size_y + i);
         result[result_idx].is_planet = env.compare(hash, planet_threshold) < 0;
-        // result[result_idx].is_planet = true;
-        env.store(&(result[result_idx].hash), hash);
+        if (result[result_idx].is_planet) {
+            env.store(&(result[result_idx].hash), hash);
+        }
         result[result_idx].x = coord_x;
         result[result_idx].y = coord_y;
     }
@@ -271,10 +272,7 @@ void run_mine_batch(int device, const CudaMinerOptions &options, const ChunkFoot
     uint32_t items_per_block = options.thread_work_size * options.block_size;
     // grid_size_y = ceil(side_length / items_per_block)
     uint32_t grid_size_y = (chunk.side_length + items_per_block - 1) / items_per_block;
-    if (options.block_size != 1) {
-        throw std::runtime_error("block_size must be 1");
-    }
-    dim3 block_size(bn_params::TPI, options.block_size);
+    dim3 block_size(bn_params::TPI * options.block_size, 1);
     dim3 grid_size(chunk.side_length, grid_size_y);
 
     BOOST_LOG_TRIVIAL(info) << "Starting miner kernel";
@@ -283,10 +281,11 @@ void run_mine_batch(int device, const CudaMinerOptions &options, const ChunkFoot
                             << "(" << chunk.bottom_left.x << ", " << chunk.bottom_left.y << ")";
     BOOST_LOG_TRIVIAL(info) << "  -      side length: " << chunk.side_length;
     BOOST_LOG_TRIVIAL(info) << "  - thread_work_size: " << options.thread_work_size;
+    BOOST_LOG_TRIVIAL(info) << "  -       block_size: " << options.block_size;
     BOOST_LOG_TRIVIAL(info) << "  -           BN TPI: " << bn_params::TPI;
-    BOOST_LOG_TRIVIAL(info) << "  -       block size: "
+    BOOST_LOG_TRIVIAL(info) << "  - final block size: "
                             << "(" << block_size.x << ", " << block_size.y << ")";
-    BOOST_LOG_TRIVIAL(info) << "  -        grid size: "
+    BOOST_LOG_TRIVIAL(info) << "  -  final grid size: "
                             << "(" << grid_size.x << ", " << grid_size.y << ")";
 
     mine_batch_kernel<bn_params>
@@ -306,7 +305,6 @@ void run_mine_batch(int device, const CudaMinerOptions &options, const ChunkFoot
             to_mpz(planet_hash.get_mpz_t(), cpu_batch[i].hash);
             Coordinate coord(cpu_batch[i].x, cpu_batch[i].y);
             std::string hash = planet_hash.get_str();
-            BOOST_LOG_TRIVIAL(info) << coord.x << ", " << coord.y << " = " << hash;
             PlanetLocation location(std::move(coord), std::move(hash));
             result.push_back(location);
         }
