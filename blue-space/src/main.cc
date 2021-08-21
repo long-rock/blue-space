@@ -116,7 +116,7 @@ class BlueSpace
             miner_type_ = MinerType::Cuda;
 #if HAS_CUDA_MINER
             cuda_device_ = cuda_device.value_or(0);
-            auto tpi = cuda_threads_per_item.value_or(16);
+            auto tpi = cuda_threads_per_item.value_or(8);
             miner::cuda::ThreadsPerItem tpi_;
             if (tpi <= 4)
             {
