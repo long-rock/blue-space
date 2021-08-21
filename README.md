@@ -3,6 +3,44 @@
 This is a a miner/explorer for the [Dark Forest game](https://zkga.me).
 It includes a CPU miner implemented using GMP, and a GPU miner implemented in CUDA.
 
+## Installation
+
+We provide binary packages for Ubuntu 20.04, [you can find them in the Releases
+section](https://github.com/long-rock/blue-space/releases).
+
+The CUDA version requires you to have CUDA and the Nvidia drivers installed.
+
+## Usage
+
+Blue Space can be used in two modes:
+
+ * `--benchmark`: run a simple benchmark and exit. This is used for tuning the CUDA
+    parameters,
+ * `--stateless`: run the explorer web server waiting requests from the game.
+
+To toggle between CPU or GPU mode, use the `--cpu` or `--cuda` flags. Note that
+the `--cuda` flag is available only if you downloaded the CUDA version of Blue Space.
+
+You can get a list of all available flags with `blue-space --help`.
+
+## Tuning the CUDA miner
+
+The CUDA miner is _very_ sensitive to the parameters you pass to it. The parameters
+optimal value is dependant on your card, so it's difficult to provide sensible
+defaults. When tuning the miner, remember to also change the `--size` and then
+change it in the remote explorer plugin as well.
+
+The CUDA related flags are:
+
+ * `--cuda-device`: If you have multiple cards, change between them by passing the
+    card index. You can find the card index in Nvidia X Settings. By default this
+    flag is `0`.
+ * `--cuda-thread-work-size`: the number of locations explored by each CUDA thread.
+ * `--cuda-block-size`: the number of _virtual_ threads in each block. See next option.
+ * `--cuda-threads-per-item`: the number of threads used for each number. The default
+    value of `8` should always be the optimal one. The effective number of threads in
+    a block is given by: `block-size * threads-per-item`.
+
 ## Building
 
 You need the following dependencies to build `blue-space`. You can install them
@@ -63,32 +101,6 @@ Finally, build `blue-space`.
     cmake --build builddir
 
 The `blue-space` binary is `builddir/blue-space/blue-space`.
-
-## Running
-
-You can run `blue-space` in either CPU or CUDA mode. At the moment, you can only
-run a short benchmark.
-
-For benchmarking your CPU:
-
-    blue-space \
-        --benchmark \ # benchmark mode
-        --cpu \ # use cpu miner
-        --size 65536 \ # how many coordinates to mine in a batch
-        --cpu-threads 8 # how many cpu threads
-
-For benchmarking your CUDA:
-
-    blue-space \
-        --benchmark \ # benchmark mode
-        --cuda \ # use cuda miner
-        --size 65536 \ # how many coordinates to mine in a batch
-        --cuda-device 0 \ # cuda device, 0 if you only have 1 GPU
-        --cuda-thread-work-size 16 \ # how many coords per gpu thread
-        --cuda-block-size 32 \ # how many threads in a block
-
-You need to tune the `--size`, `--cuda-thread-work-size`, and
-`--cuda-block-size` parameters to your GPU.
 
 ## License
 
