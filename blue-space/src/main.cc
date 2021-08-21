@@ -76,6 +76,9 @@ class BlueSpace
 
         std::optional<uint32_t> cuda_block_size;
         app.add_option("--cuda-block-size", cuda_block_size, "Set the size of each CUDA block");
+
+        std::optional<uint32_t> cuda_threads_per_item;
+        app.add_option("--cuda-threads-per-item", cuda_threads_per_item, "Set the number of CUDA threads for each number. Values allowed: 4, 8, 16, 32");
 #endif
 
         std::optional<uint32_t> mine_rarity;
@@ -112,7 +115,18 @@ class BlueSpace
             miner_type_ = MinerType::Cuda;
 #if HAS_CUDA_MINER
             cuda_device_ = cuda_device.value_or(0);
-            miner::cuda::CudaMinerOptions options(cuda_thread_work_size.value_or(16), cuda_block_size.value_or(32));
+            auto tpi = cuda_threads_per_item.value_or(16);
+            miner::cuda::ThreadsPerItem tpi_;
+            if (tpi <= 4) {
+                tpi_ = miner::cuda::ThreadsPerItem::TPI_4;
+            } else if (tpi <= 8) {
+                tpi_ = miner::cuda::ThreadsPerItem::TPI_8;
+            } else if (tpi <= 16) {
+                tpi_ = miner::cuda::ThreadsPerItem::TPI_16;
+            } else {
+                tpi_ = miner::cuda::ThreadsPerItem::TPI_32;
+            }
+            miner::cuda::CudaMinerOptions options(cuda_thread_work_size.value_or(16), cuda_block_size.value_or(32), tpi_);
             cuda_miner_options_ = options;
 #endif
         }
