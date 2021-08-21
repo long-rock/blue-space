@@ -15,7 +15,12 @@ using namespace miner::cuda;
 
 TEST(CpuMinerTest, FindsPlanets)
 {
-    auto miner = miner::cuda::CudaMiner(0, miner::cuda::CudaMinerOptions());
+    auto options = CudaMinerOptions();
+    //options.thread_work_size = 16;
+    options.thread_work_size = 128;
+    options.block_size = 1;
+    //options.thread_work_size = 256;
+    auto miner = miner::cuda::CudaMiner(0, options);
     // values computed with darkforest-rs
     std::vector<PlanetLocation> expected_planets = {
         PlanetLocation(Coordinate(-81, 13), "940730834903647137929381122188788642093437120345760373357871377071349968"),
