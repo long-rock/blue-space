@@ -6,11 +6,11 @@ if(NOT JSON_RPC_LEAN_FOUND)
     include(FetchContent)
     FetchContent_Declare(
       JsonRpcLean
-      GIT_REPOSITORY https://github.com/uskr/jsonrpc-lean.git
-      GIT_TAG        e23500425fce7d3752e030ae0eeff71e974edd73 # v1.1.0
+      URL https://github.com/uskr/jsonrpc-lean/releases/download/1.1.0/jsonrpc-lean-1.1.0.zip
+      URL_HASH SHA3_256=90f74e1999ec3f512ac567b05c48dd386e40d278205f505f3ab0955bbcba326a # v1.1.0
     )
     FetchContent_MakeAvailable(JsonRpcLean)
-    set(JSONRPCLEAN_INCLUDE_DIR "${jsonrpclean_SOURCE_DIR}/include")
+    set(JSONRPCLEAN_INCLUDE_DIR "${jsonrpclean_SOURCE_DIR}")
     find_package(JsonRpcLean REQUIRED)
 endif()
 
@@ -20,8 +20,8 @@ if(NOT CLI11_FOUND)
     message("Downloading CLI11 from GitHub")
     include(FetchContent)
     FetchContent_Declare(CLI11_EXTERNAL
-        GIT_REPOSITORY    https://github.com/CLIUtils/CLI11.git
-        GIT_TAG           5cb3efabce007c3a0230e4cc2e27da491c646b6c # v1.9.1
+        URL https://github.com/CLIUtils/CLI11/archive/refs/tags/v1.9.1.tar.gz
+        URL_HASH SHA3_256=abdbf30c5ec8bf1f72c1bac1a3f24fe55b894bf46c6486acf6fcb5ff6911b8a2 # v1.9.1
     )
     # FetchContent will automatically make the CLI11:CLI11 target available
     FetchContent_MakeAvailable(CLI11_EXTERNAL)
