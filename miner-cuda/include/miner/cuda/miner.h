@@ -11,15 +11,25 @@ namespace miner
 namespace cuda
 {
 
+enum class ThreadsPerItem
+{
+  TPI_4 = 4,
+  TPI_8 = 8,
+  TPI_16 = 16,
+  TPI_32 = 32,
+};
+
 struct CudaMinerOptions
 {
     uint32_t thread_work_size;
     uint32_t block_size;
+    ThreadsPerItem threads_per_item;
 
-    CudaMinerOptions() : thread_work_size(64), block_size(16)
+    CudaMinerOptions() : thread_work_size(64), block_size(16), threads_per_item(ThreadsPerItem::TPI_16)
     {
     }
-    CudaMinerOptions(uint32_t ws, uint32_t bs) : thread_work_size(ws), block_size(bs)
+
+    CudaMinerOptions(uint32_t ws, uint32_t bs, ThreadsPerItem tpi) : thread_work_size(ws), block_size(bs), threads_per_item(tpi)
     {
     }
 };

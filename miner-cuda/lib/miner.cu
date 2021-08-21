@@ -99,15 +99,17 @@ __device__ __forceinline__ void wrap_coordinate(env_t &env, bn_t &c_bn, int64_t 
 template <class env_t, class bn_t = typename env_t::cgbn_t>
 __device__ __forceinline__ void field_add(env_t &env, bn_t &r, const bn_t &a, const bn_t &b, bn_t &t, const bn_t &p)
 {
-    env.add(t, a, b);
-    env.rem(r, t, p);
+    env.add(r, a, b);
+    while (env.compare(r, p) > 0) {
+        env.sub(r, r, p);
+    }
 }
 
 template <class env_t, class bn_t = typename env_t::cgbn_t>
 __device__ __forceinline__ void field_mul(env_t &env, bn_t &r, const bn_t &a, const bn_t &b, bn_t &t, const bn_t &p)
 {
-    env.mul(t, a, b);
-    env.rem(r, t, p);
+    env.mul(r, a, b);
+    env.rem(r, r, p);
 }
 
 template <class env_t, class bn_t = typename env_t::cgbn_t>
@@ -347,6 +349,14 @@ void CudaMiner::mine(const ChunkFootprint &chunk, uint32_t rarity, uint32_t key,
     mpz_class key_mpz(key);
     kernel::from_mpz(key_mpz.get_mpz_t(), key_bn);
 
-    typedef kernel::BnParams<32> bn_params_32;
-    kernel::run_mine_batch<bn_params_32>(device_, options_, chunk, planet_threshold_bn, key_bn, result);
+    switch (options_.threads_per_item) {
+        case ThreadsPerItem::TPI_4:
+            return kernel::run_mine_batch<kernel::BnParams<4>>(device_, options_, chunk, planet_threshold_bn, key_bn, result);
+        case ThreadsPerItem::TPI_8:
+            return kernel::run_mine_batch<kernel::BnParams<8>>(device_, options_, chunk, planet_threshold_bn, key_bn, result);
+        case ThreadsPerItem::TPI_16:
+            return kernel::run_mine_batch<kernel::BnParams<16>>(device_, options_, chunk, planet_threshold_bn, key_bn, result);
+        default:
+            return kernel::run_mine_batch<kernel::BnParams<32>>(device_, options_, chunk, planet_threshold_bn, key_bn, result);
+    }
 }
