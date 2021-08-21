@@ -150,6 +150,18 @@ template <class env_t, class bn_t = typename env_t::cgbn_t> class Sponge
         env.set(r_, t0_);
     }
 
+    __device__ void save(env_t &env)
+    {
+        env.set(snap_l_, l_);
+        env.set(snap_r_, r_);
+    }
+
+    __device__ void restore(env_t &env)
+    {
+        env.set(l_, snap_l_);
+        env.set(r_, snap_r_);
+    }
+
     __device__ void result(env_t &env, bn_t &out)
     {
         env.set(out, l_);
@@ -158,6 +170,9 @@ template <class env_t, class bn_t = typename env_t::cgbn_t> class Sponge
   private:
     bn_t l_;
     bn_t r_;
+
+    bn_t snap_l_;
+    bn_t snap_r_;
 
     bn_t t0_;
     bn_t t1_;
@@ -202,6 +217,12 @@ __global__ void mine_batch_kernel(cgbn_error_report_t *report, const ChunkFootpr
 
     __syncthreads();
 
+    wrap_coordinate(env, xi, coord_x, P);
+    sponge.reset(env);
+    sponge.inject(env, xi, P);
+    sponge.mix(env, key, C, C_SIZE, P);
+    sponge.save(env);
+
     uint32_t start_size_y = blockIdx.y * blockDim.y + items_per_thread * threadIdx.y;
     for (uint32_t i = 0; i < items_per_thread; ++i)
     {
@@ -211,11 +232,7 @@ __global__ void mine_batch_kernel(cgbn_error_report_t *report, const ChunkFootpr
         }
 
         int64_t coord_y = chunk.bottom_left.y + start_size_y + i;
-
-        wrap_coordinate(env, xi, coord_x, P);
-        sponge.reset(env);
-        sponge.inject(env, xi, P);
-        sponge.mix(env, key, C, C_SIZE, P);
+        sponge.restore(env);
         wrap_coordinate(env, yi, coord_y, P);
         sponge.inject(env, yi, P);
         sponge.mix(env, key, C, C_SIZE, P);
@@ -252,7 +269,8 @@ void run_mine_batch(int device, const CudaMinerOptions &options, const ChunkFoot
 
     BOOST_LOG_TRIVIAL(info) << "Starting miner kernel";
     BOOST_LOG_TRIVIAL(info) << "  CUDA configuration:";
-    BOOST_LOG_TRIVIAL(info) << "  -      bottom left: " << "(" << chunk.bottom_left.x << ", " << chunk.bottom_left.y << ")";
+    BOOST_LOG_TRIVIAL(info) << "  -      bottom left: "
+                            << "(" << chunk.bottom_left.x << ", " << chunk.bottom_left.y << ")";
     BOOST_LOG_TRIVIAL(info) << "  -      side length: " << chunk.side_length;
     BOOST_LOG_TRIVIAL(info) << "  - thread_work_size: " << options.thread_work_size;
     BOOST_LOG_TRIVIAL(info) << "  -           BN TPI: " << bn_params::TPI;
