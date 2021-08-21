@@ -16,8 +16,9 @@ if(NOT CGBN_FOUND)
     message("Downloading CGBN from GitHub")
     include(FetchContent)
     FetchContent_Declare(CGBN
-        GIT_REPOSITORY    https://github.com/NVlabs/CGBN.git
-        GIT_TAG           2245cc145797d3405cb7d45ec1dec6acca8a7328 # master as of july 16th 2021
+        # master commit as of july 16th 2021
+        URL https://github.com/NVlabs/CGBN/tarball/2245cc145797d3405cb7d45ec1dec6acca8a7328
+        URL_HASH SHA3_256=4365e3dea88f381abe1ef0f075fe2fdabe5a07ae21dd1de63bf42467c50d9e98
     )
     FetchContent_MakeAvailable(CGBN)
     set(CGBN_INCLUDE_DIR "${cgbn_SOURCE_DIR}/include")
