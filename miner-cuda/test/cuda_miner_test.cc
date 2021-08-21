@@ -18,7 +18,7 @@ TEST(CpuMinerTest, FindsPlanets)
     auto options = CudaMinerOptions();
     //options.thread_work_size = 16;
     options.thread_work_size = 128;
-    options.block_size = 1;
+    options.block_size = 8;
     //options.thread_work_size = 256;
     auto miner = miner::cuda::CudaMiner(0, options);
     // values computed with darkforest-rs
