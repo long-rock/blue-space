@@ -17,15 +17,6 @@
 using namespace miner::common;
 using namespace miner::cuda;
 
-CudaMiner::CudaMiner(int device, const CudaMinerOptions &options)
-    : device_(device), options_(options), initialized_(false)
-{
-}
-
-CudaMiner::~CudaMiner()
-{
-}
-
 namespace kernel
 {
 
@@ -56,6 +47,19 @@ template <uint32_t tpi> struct BnParams
 {
     static const uint32_t TPI = tpi; // GCBN threads per intstance.
 };
+
+} // namespace kernel
+
+struct miner::cuda::CachedDeviceMemory
+{
+    uint32_t side_length;
+    std::size_t bytes_size;
+    kernel::CudaWorkItem *d_batch;
+    kernel::CudaWorkItem *h_batch;
+};
+
+namespace kernel
+{
 
 void to_mpz(mpz_t r, const bn_mem_t &x)
 {
@@ -228,7 +232,8 @@ __global__ void mine_batch_kernel(cgbn_error_report_t *report, const ChunkFootpr
     sponge.mix(env, key, C, C_SIZE, P);
     sponge.save(env);
 
-    uint32_t start_size_y = blockIdx.y * (blockDim.y + items_per_thread) + items_per_thread * (threadIdx.x / bn_params::TPI);
+    uint32_t start_size_y =
+        blockIdx.y * (blockDim.y + items_per_thread) + items_per_thread * (threadIdx.x / bn_params::TPI);
     for (uint32_t i = 0; i < items_per_thread; ++i)
     {
         if (start_size_y + i >= chunk.side_length)
@@ -246,7 +251,8 @@ __global__ void mine_batch_kernel(cgbn_error_report_t *report, const ChunkFootpr
 
         uint32_t result_idx = blockIdx.x + chunk.side_length * (start_size_y + i);
         result[result_idx].is_planet = env.compare(hash, planet_threshold) < 0;
-        if (result[result_idx].is_planet) {
+        if (result[result_idx].is_planet)
+        {
             env.store(&(result[result_idx].hash), hash);
         }
         result[result_idx].x = coord_x;
@@ -256,18 +262,13 @@ __global__ void mine_batch_kernel(cgbn_error_report_t *report, const ChunkFootpr
 
 template <class bn_params>
 void run_mine_batch(int device, const CudaMinerOptions &options, const ChunkFootprint &chunk,
-                    const bn_mem_t &planet_threshold, const bn_mem_t &key, std::vector<PlanetLocation> &result)
+                    const std::shared_ptr<CachedDeviceMemory> &cache_, const bn_mem_t &planet_threshold,
+                    const bn_mem_t &key, std::vector<PlanetLocation> &result)
 {
     cgbn_error_report_t *bn_report;
 
     CUDA_CHECK(cudaSetDevice(device));
     CUDA_CHECK(cgbn_error_report_alloc(&bn_report));
-
-    // TODO: this one can be reused as long as size doesn't change.
-    CudaWorkItem *d_batch, *cpu_batch;
-    std::size_t batch_size = chunk.side_length * chunk.side_length;
-    cpu_batch = static_cast<CudaWorkItem *>(malloc(sizeof(CudaWorkItem) * batch_size));
-    CUDA_CHECK(cudaMalloc(&d_batch, sizeof(CudaWorkItem) * batch_size));
 
     uint32_t items_per_block = options.thread_work_size * options.block_size;
     // grid_size_y = ceil(side_length / items_per_block)
@@ -289,16 +290,17 @@ void run_mine_batch(int device, const CudaMinerOptions &options, const ChunkFoot
                             << "(" << grid_size.x << ", " << grid_size.y << ")";
 
     mine_batch_kernel<bn_params>
-        <<<grid_size, block_size>>>(bn_report, chunk, d_batch, options.thread_work_size, planet_threshold, key);
+        <<<grid_size, block_size>>>(bn_report, chunk, cache_->d_batch, options.thread_work_size, planet_threshold, key);
 
     CUDA_CHECK(cudaDeviceSynchronize());
     CUDA_CHECK(cudaGetLastError());
     CGBN_CHECK(bn_report);
 
-    CUDA_CHECK(cudaMemcpy(cpu_batch, d_batch, sizeof(CudaWorkItem) * batch_size, cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(cache_->h_batch, cache_->d_batch, cache_->bytes_size, cudaMemcpyDeviceToHost));
 
     mpz_class planet_hash;
-    for (std::size_t i = 0; i < batch_size; ++i)
+    CudaWorkItem *cpu_batch = cache_->h_batch;
+    for (std::size_t i = 0; i < chunk.side_length * chunk.side_length; ++i)
     {
         if (cpu_batch[i].is_planet)
         {
@@ -309,13 +311,18 @@ void run_mine_batch(int device, const CudaMinerOptions &options, const ChunkFoot
             result.push_back(location);
         }
     }
-
-    // free up memory
-    free(cpu_batch);
-    CUDA_CHECK(cudaFree(d_batch));
 }
 
 } // namespace kernel
+
+CudaMiner::CudaMiner(int device, const CudaMinerOptions &options)
+    : device_(device), options_(options), initialized_(false), cache_(nullptr)
+{
+}
+
+CudaMiner::~CudaMiner()
+{
+}
 
 void CudaMiner::initialize()
 {
@@ -343,11 +350,42 @@ void CudaMiner::initialize()
     CUDA_CHECK(cudaMemcpyToSymbol(kernel::global_mimc_c, C_bn, sizeof(kernel::bn_mem_t) * C.size()));
 }
 
+void CudaMiner::prepare_cache(uint32_t side_length)
+{
+    if (cache_ != nullptr && cache_->side_length == side_length)
+    {
+        BOOST_LOG_TRIVIAL(debug) << "CUDA cached data already present";
+        return;
+    }
+
+    // free up old memory, if any
+    if (cache_ != nullptr)
+    {
+        free(cache_->h_batch);
+        CUDA_CHECK(cudaFree(cache_->d_batch));
+    }
+    else
+    {
+        cache_ = std::make_shared<CachedDeviceMemory>();
+    }
+
+    std::size_t batch_size = side_length * side_length;
+    std::size_t bytes_size = sizeof(kernel::CudaWorkItem) * batch_size;
+
+    cache_->h_batch = static_cast<kernel::CudaWorkItem *>(malloc(bytes_size));
+
+    CUDA_CHECK(cudaSetDevice(device_));
+    CUDA_CHECK(cudaMalloc(&cache_->d_batch, bytes_size));
+    cache_->side_length = side_length;
+    cache_->bytes_size = bytes_size;
+}
+
 void CudaMiner::mine(const ChunkFootprint &chunk, uint32_t rarity, uint32_t key, std::vector<PlanetLocation> &result)
 {
     kernel::bn_mem_t planet_threshold_bn, key_bn;
 
     initialize();
+    prepare_cache(chunk.side_length);
 
     mpz_class rarity_mpz(rarity);
     mpz_class planet_threshold = P / rarity_mpz;
@@ -359,16 +397,16 @@ void CudaMiner::mine(const ChunkFootprint &chunk, uint32_t rarity, uint32_t key,
     switch (options_.threads_per_item)
     {
     case ThreadsPerItem::TPI_4:
-        return kernel::run_mine_batch<kernel::BnParams<4>>(device_, options_, chunk, planet_threshold_bn, key_bn,
-                                                           result);
+        return kernel::run_mine_batch<kernel::BnParams<4>>(device_, options_, chunk, cache_, planet_threshold_bn,
+                                                           key_bn, result);
     case ThreadsPerItem::TPI_8:
-        return kernel::run_mine_batch<kernel::BnParams<8>>(device_, options_, chunk, planet_threshold_bn, key_bn,
-                                                           result);
+        return kernel::run_mine_batch<kernel::BnParams<8>>(device_, options_, chunk, cache_, planet_threshold_bn,
+                                                           key_bn, result);
     case ThreadsPerItem::TPI_16:
-        return kernel::run_mine_batch<kernel::BnParams<16>>(device_, options_, chunk, planet_threshold_bn, key_bn,
-                                                            result);
+        return kernel::run_mine_batch<kernel::BnParams<16>>(device_, options_, chunk, cache_, planet_threshold_bn,
+                                                            key_bn, result);
     default:
-        return kernel::run_mine_batch<kernel::BnParams<32>>(device_, options_, chunk, planet_threshold_bn, key_bn,
-                                                            result);
+        return kernel::run_mine_batch<kernel::BnParams<32>>(device_, options_, chunk, cache_, planet_threshold_bn,
+                                                            key_bn, result);
     }
 }
