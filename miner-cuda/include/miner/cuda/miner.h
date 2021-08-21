@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <string>
+#include <memory>
 #include <vector>
 
 namespace miner
@@ -34,6 +35,8 @@ struct CudaMinerOptions
     }
 };
 
+struct CachedDeviceMemory;
+
 class CudaMiner : public common::Miner
 {
   public:
@@ -44,10 +47,12 @@ class CudaMiner : public common::Miner
 
   private:
     void initialize();
+    void prepare_cache(uint32_t side_length);
 
     int device_;
     CudaMinerOptions options_;
     bool initialized_;
+    std::shared_ptr<CachedDeviceMemory> cache_;
 };
 
 } // namespace cuda

@@ -78,7 +78,8 @@ class BlueSpace
         app.add_option("--cuda-block-size", cuda_block_size, "Set the size of each CUDA block");
 
         std::optional<uint32_t> cuda_threads_per_item;
-        app.add_option("--cuda-threads-per-item", cuda_threads_per_item, "Set the number of CUDA threads for each number. Values allowed: 4, 8, 16, 32");
+        app.add_option("--cuda-threads-per-item", cuda_threads_per_item,
+                       "Set the number of CUDA threads for each number. Values allowed: 4, 8, 16, 32");
 #endif
 
         std::optional<uint32_t> mine_rarity;
@@ -117,16 +118,24 @@ class BlueSpace
             cuda_device_ = cuda_device.value_or(0);
             auto tpi = cuda_threads_per_item.value_or(16);
             miner::cuda::ThreadsPerItem tpi_;
-            if (tpi <= 4) {
+            if (tpi <= 4)
+            {
                 tpi_ = miner::cuda::ThreadsPerItem::TPI_4;
-            } else if (tpi <= 8) {
+            }
+            else if (tpi <= 8)
+            {
                 tpi_ = miner::cuda::ThreadsPerItem::TPI_8;
-            } else if (tpi <= 16) {
+            }
+            else if (tpi <= 16)
+            {
                 tpi_ = miner::cuda::ThreadsPerItem::TPI_16;
-            } else {
+            }
+            else
+            {
                 tpi_ = miner::cuda::ThreadsPerItem::TPI_32;
             }
-            miner::cuda::CudaMinerOptions options(cuda_thread_work_size.value_or(16), cuda_block_size.value_or(32), tpi_);
+            miner::cuda::CudaMinerOptions options(cuda_thread_work_size.value_or(16), cuda_block_size.value_or(32),
+                                                  tpi_);
             cuda_miner_options_ = options;
 #endif
         }
@@ -196,19 +205,31 @@ class BlueSpace
         miner::common::ChunkFootprint chunk(bottom_left, mine_size_);
         std::vector<miner::common::PlanetLocation> result;
 
-        auto start = timer_clock::now();
+        std::size_t num_iter = 2;
+
         BOOST_LOG_TRIVIAL(info) << "Mine batch size=" << mine_size_ << ", rarity=" << mine_rarity_
                                 << ", key=" << mine_key_;
-        miner->mine(chunk, mine_rarity_, mine_key_, result);
+        auto start = timer_clock::now();
+        for (std::size_t i = 0; i < num_iter; ++i)
+        {
+            run_benchmark_iteration(miner, chunk, mine_rarity_, mine_key_, result);
+        }
         auto end = timer_clock::now();
         auto time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         if (time_ms > 0)
         {
-            double num_hashes = mine_size_ * mine_size_;
+            double num_hashes = mine_size_ * mine_size_ * num_iter;
             double rate = num_hashes / (time_ms / 1000.0);
             BOOST_LOG_TRIVIAL(info) << "Mined " << num_hashes << " hashes in " << time_ms << " ms. Hash rate: " << rate
                                     << " H/s";
         }
+    }
+
+    void run_benchmark_iteration(std::shared_ptr<miner::common::Miner> &miner,
+                                 const miner::common::ChunkFootprint &chunk, uint32_t mine_rarity, uint32_t mine_key,
+                                 std::vector<miner::common::PlanetLocation> &result)
+    {
+        miner->mine(chunk, mine_rarity, mine_key, result);
     }
 
   private:
