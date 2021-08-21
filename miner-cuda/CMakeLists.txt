@@ -10,7 +10,20 @@ set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
 
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-use_fast_math)
 
-find_package(CGBN REQUIRED)
+find_package(CGBN)
+
+if(NOT CGBN_FOUND)
+    message("Downloading CGBN from GitHub")
+    include(FetchContent)
+    FetchContent_Declare(CGBN
+        GIT_REPOSITORY    https://github.com/NVlabs/CGBN.git
+        GIT_TAG           2245cc145797d3405cb7d45ec1dec6acca8a7328 # master as of july 16th 2021
+    )
+    FetchContent_MakeAvailable(CGBN)
+    set(CGBN_INCLUDE_DIR "${cgbn_SOURCE_DIR}/include")
+    find_package(CGBN REQUIRED)
+endif(NOT CGBN_FOUND)
+
 find_package(Boost REQUIRED COMPONENTS log)
 
 cuda_add_library(miner-cuda STATIC ${CU_SOURCE})
