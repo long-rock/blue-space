@@ -33,8 +33,11 @@ class CudaMiner : public common::Miner
               std::vector<miner::common::PlanetLocation> &result);
 
   private:
+    void initialize();
+
     int device_;
     CudaMinerOptions options_;
+    bool initialized_;
 };
 
 } // namespace cuda

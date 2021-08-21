@@ -177,7 +177,8 @@ class BlueSpace
 
     void run_benchmark(std::shared_ptr<miner::common::Miner> &miner)
     {
-        miner::common::Coordinate bottom_left(-mine_size_ / 2, -mine_size_ / 2);
+        int64_t half_size = static_cast<int64_t>(mine_size_) / 2;
+        miner::common::Coordinate bottom_left(-half_size, -half_size);
         miner::common::ChunkFootprint chunk(bottom_left, mine_size_);
         std::vector<miner::common::PlanetLocation> result;
 

@@ -8,7 +8,7 @@ set(
 # Work around cuda_add_library using plain signatures
 set(CUDA_LIBRARIES PUBLIC ${CUDA_LIBRARIES})
 
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-use_fast_math)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-use_fast_math;-lineinfo)
 
 find_package(CGBN REQUIRED)
 find_package(Boost REQUIRED COMPONENTS log)
