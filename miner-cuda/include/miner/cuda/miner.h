@@ -25,7 +25,7 @@ struct CudaMinerOptions
     uint32_t block_size;
     ThreadsPerItem threads_per_item;
 
-    CudaMinerOptions() : thread_work_size(64), block_size(16), threads_per_item(ThreadsPerItem::TPI_16)
+    CudaMinerOptions() : thread_work_size(64), block_size(16), threads_per_item(ThreadsPerItem::TPI_8)
     {
     }
 
