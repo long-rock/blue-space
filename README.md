@@ -51,17 +51,20 @@ with your distribution favourite package manager.
  * Boost.Log
  * [Google Test](https://github.com/google/googletest)
  * [Google Benchmark](https://github.com/google/benchmark)
- * [CLI11 1.9](https://github.com/CLIUtils/CLI11). Note that this project
-   expects to find the header in `<CLI/CLI.hpp>`.
+ * [CLI11 1.9](https://github.com/CLIUtils/CLI11).
+   You can download the header to a location on your file system and set `CLI11_DIR`.
+   If this is not installed, CMake will download it.
  * [Json Rpc Lean](https://github.com/uskr/jsonrpc-lean). Download the source
    on your file system, then set the `JSONRPCLEAN_INCLUDE_DIR` configuration
    variable to the path to jsonrpc-lean `include/` directory.
+   If this is not installed, CMake will download it.
 
 To build the GPU miner, you need the following additional dependencies.
 
  * [The CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit). Follows for example [this step-by-step tutorial](https://cloud.google.com/compute/docs/gpus/install-drivers-gpu).
- * [CGBN](https://github.com/NVlabs/CGBN). You should download the source
-    to a location on your file system.
+ * [CGBN](https://github.com/NVlabs/CGBN). You can download the source
+    to a location on your file system and set `CGBN_INCLUDE_DIR`,
+    otherwise if this is not installed, CMake will download it for you.
 
 On Ubuntu 21.04 you can install all dependencies with:
 
@@ -89,12 +92,10 @@ Configure `cmake`, run the following from the `blue-space` directory.
         -S . \ # the source location
         -B buildir \ # the build directory
         -DCMAKE_BUILD_TYPE=Release \ # make release
-        -DJSONRPCLEAN_INCLUDE_DIR=/path/to/jsonrpc-lean \ # jsonrpc lean include directory
         -DBUILD_TEST=OFF \ # build tests, requires gtest and benchmark
         -DCUDA_MINER=ON \ # enable cuda miner
         -DCUDA_HOST_COMPILER=/usr/bin/g++-10 \ # only needed if you have g++ 11 on your system
         -DCMAKE_CUDA_ARCHITECTURES=35 \ # cuda architecture, depends on your gpu
-        -DCGBN_INCLUDE_DIR=/path/to/cgbn/include # location of your cgbn installation
 
 Finally, build `blue-space`.
 
