@@ -37,10 +37,10 @@ void Server::start(unsigned short port)
     listener_->start();
 
     auto on_new_session = [wp = weak_from_this()](const Session::Ptr &session) {
-        session->set_request_handler([wp](std::string_view request, Session::Ptr session) {
+        session->set_request_handler([wp](const std::string &path, std::string_view request, Session::Ptr session) {
             if (auto self = wp.lock())
             {
-                self->handle_request(request, session);
+                self->handle_request(path, request, session);
             }
         });
     };
@@ -50,9 +50,9 @@ void Server::start(unsigned short port)
     ioc->run();
 }
 
-void Server::handle_request(std::string_view request, Session::Ptr session)
+void Server::handle_request(const std::string &path, std::string_view request, Session::Ptr session)
 {
-    rpc_->handle_request(request, [&](const std::string &response) {
+    rpc_->handle_request(path, request, [&](const std::string &response) {
         session->send_response(response);
     });
 }

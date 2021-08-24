@@ -22,7 +22,7 @@ class Server
     void initialize();
     void register_method(const std::string &name, jsonrpc::MethodWrapper::Method method);
 
-    void handle_request(std::string_view request, const ResponseHandler &cb);
+    void handle_request(const std::string &path, std::string_view request, const ResponseHandler &cb);
 
   private:
     jsonrpc::Server rpc_server_;

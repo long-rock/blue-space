@@ -15,7 +15,7 @@ class Session : public std::enable_shared_from_this<Session>
   public:
     using Ptr = std::shared_ptr<Session>;
 
-    using RequestHandler = std::function<void(std::string_view view, Ptr session)>;
+    using RequestHandler = std::function<void(const std::string &path, std::string_view body, Ptr session)>;
 
     using Socket = boost::asio::ip::tcp::socket;
     using Body = beast::http::string_body;
@@ -37,6 +37,7 @@ class Session : public std::enable_shared_from_this<Session>
 
     void send_response(std::string_view response);
     void send_cors_response();
+    void send_not_found();
 
     template<class Message>
     void send_message(Message &&message);
