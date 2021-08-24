@@ -60,12 +60,16 @@ template <class B> void Session::handle_request(beast::http::request<B> &&reques
         {
             return send_cors_response();
         }
-        else
+        else if (request.method() == beast::http::verb::post)
         {
             BOOST_LOG_TRIVIAL(debug) << "session: about to read body";
             auto body = request.body();
+            auto path = std::string(request.target());
+            BOOST_LOG_TRIVIAL(debug) << "session: path " << path;
             BOOST_LOG_TRIVIAL(debug) << "session: body has size " << body.size();
-            (*on_request_)(body, shared_from_this());
+            (*on_request_)(path, body, shared_from_this());
+        } else {
+            return send_not_found();
         }
     }
 }
@@ -80,6 +84,17 @@ void Session::send_cors_response()
     res.content_length(0);
     res.keep_alive(true);
     res.prepare_payload();
+    return send_message(std::move(res));
+}
+
+void Session::send_not_found()
+{
+    beast::http::response<beast::http::string_body> res(std::piecewise_construct);
+    res.set(beast::http::field::server, SERVER_NAME);
+    res.result(404);
+    res.prepare_payload();
+    res.content_length(0);
+    res.keep_alive(true);
     return send_message(std::move(res));
 }
 
