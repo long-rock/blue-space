@@ -4,6 +4,7 @@
 #include <jsonrpc-lean/value.h>
 
 #include <boost/log/trivial.hpp>
+#include <boost/core/ignore_unused.hpp>
 #include <rapidjson/document.h>
 #include <rapidjson/stream.h>
 #include <rapidjson/stringbuffer.h>
@@ -29,8 +30,9 @@ void Server::register_method(const std::string &name, jsonrpc::MethodWrapper::Me
     dispatcher.AddMethod(name, std::move(method));
 }
 
-void Server::handle_request(std::string_view request, const ResponseHandler &cb)
+void Server::handle_request(const std::string &path, std::string_view request, const ResponseHandler &cb)
 {
+    boost::ignore_unused(path);
     if (request.size() == 0)
     {
         return;
