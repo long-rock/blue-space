@@ -90,7 +90,7 @@ Configure `cmake`, run the following from the `blue-space` directory.
 
     cmake \
         -S . \ # the source location
-        -B buildir \ # the build directory
+        -B builddir \ # the build directory
         -DCMAKE_BUILD_TYPE=Release \ # make release
         -DBUILD_TEST=OFF \ # build tests, requires gtest and benchmark
         -DCUDA_MINER=ON \ # enable cuda miner
