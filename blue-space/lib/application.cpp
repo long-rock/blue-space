@@ -11,13 +11,15 @@ using namespace application;
 Application::Application(Application::Options options) : options_(options)
 {
     rpc_ = std::make_shared<rpc::Server>();
-    server_ = std::make_shared<Server>(rpc_);
+    rest_ = std::make_shared<rest::Server>();
+    server_ = std::make_shared<Server>(rpc_, rest_);
 }
 
 void Application::initialize(miner::common::Miner::Ptr miner)
 {
     rpc_->initialize();
     stateless_ = std::make_shared<api::StatelessApi>(miner);
+    rest_->initialize(stateless_);
 
     rpc::stateless::register_methods(rpc_, stateless_);
 }

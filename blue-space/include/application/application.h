@@ -2,6 +2,7 @@
 
 #include "api/stateless.h"
 #include "rpc/server.h"
+#include "rest.h"
 #include "server.h"
 
 #include "miner/common/miner.h"
@@ -28,6 +29,7 @@ class Application
     Options options_;
     api::StatelessApi::Ptr stateless_;
     rpc::Server::Ptr rpc_;
+    rest::Server::Ptr rest_;
     Server::Ptr server_;
 };
 } // namespace application
