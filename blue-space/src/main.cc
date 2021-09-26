@@ -109,7 +109,7 @@ class BlueSpace
             return false;
         }
 
-        http_port_ = http_port.value_or(8888);
+        http_port_ = http_port.value_or(8000);
 
         if (use_cuda_miner)
         {

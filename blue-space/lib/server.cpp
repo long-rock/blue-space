@@ -18,7 +18,7 @@ using namespace application;
 
 using tcp = boost::asio::ip::tcp;
 
-Server::Server(std::shared_ptr<rpc::Server> rpc) : rpc_(rpc)
+Server::Server(std::shared_ptr<rpc::Server> rpc, std::shared_ptr<rest::Server> rest) : rpc_(rpc), rest_(rest)
 {
 }
 
@@ -52,7 +52,14 @@ void Server::start(unsigned short port)
 
 void Server::handle_request(const std::string &path, std::string_view request, Session::Ptr session)
 {
-    rpc_->handle_request(path, request, [&](const std::string &response) {
-        session->send_response(response);
-    });
+    // compatibility endpoint
+    if (path == "/mine") {
+        rest_->handle_request(path, request, [&](const std::string &response) {
+            session->send_response(response);
+        });
+    } else {
+        rpc_->handle_request(path, request, [&](const std::string &response) {
+            session->send_response(response);
+        });
+    }
 }
