@@ -33,9 +33,7 @@ jobs:
           rapidjson-dev \
           libgmp-dev \
           libgmpxx4ldbl \
-          libboost-container-dev \
-          libboost-thread-dev \
-          libboost-log-dev \
+          libboost-all-dev \
           libgtest-dev
       - name: Install CLI11
         run: |
@@ -92,9 +90,7 @@ jobs:
           rapidjson-dev \
           libgmp-dev \
           libgmpxx4ldbl \
-          libboost-container-dev \
-          libboost-thread-dev \
-          libboost-log-dev \
+          libboost-all-dev \
           libgtest-dev
       - name: Install CLI11
         run: |
