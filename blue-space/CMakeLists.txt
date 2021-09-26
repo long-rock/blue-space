@@ -33,6 +33,7 @@ set(
     "lib/rpc/stateless.cpp"
     "lib/rpc/server.cpp"
     "lib/session.cpp"
+    "lib/rest.cpp"
     "lib/listener.cpp"
     "lib/server.cpp"
     "lib/application.cpp"
