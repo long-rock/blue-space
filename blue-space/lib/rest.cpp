@@ -1,22 +1,24 @@
 #include "application/rest.h"
 
+#include <sstream>
+
 #include <boost/core/ignore_unused.hpp>
-#include <boost/json/src.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 using namespace miner::common;
 using namespace application::rest;
+namespace pt = boost::property_tree;
 
 namespace internal
 {
-boost::json::value planet_location_json(const PlanetLocation &planet)
+pt::ptree planet_location_json(const PlanetLocation &planet)
 {
-    boost::json::object r;
-    boost::json::object c;
-    c["x"] = planet.coordinate.x;
-    c["y"] = planet.coordinate.y;
-    r["coords"] = c;
-    r["hash"] = boost::json::string(planet.hash);
+    pt::ptree r;
+    r.put("coords.x", planet.coordinate.x);
+    r.put("coords.y", planet.coordinate.y);
+    r.put("hash", planet.hash);
     return r;
 }
 
@@ -39,30 +41,32 @@ void Server::handle_request(const std::string &path, std::string_view request, c
         return;
     }
 
-    boost::json::value request_json = boost::json::parse(std::string(request));
+    std::istringstream request_stream(std::string(request), std::ios_base::in);
+    pt::ptree request_json;
+    pt::read_json(request_stream, request_json);
 
-    auto root = request_json.as_object();
-    auto chunk_footprint = root["chunkFootprint"].as_object();
-    auto bottom_left = chunk_footprint["bottomLeft"].as_object();
-    auto side_length = chunk_footprint["sideLength"].as_int64();
-    auto x = bottom_left["x"].as_int64();
-    auto y = bottom_left["y"].as_int64();
-    auto planet_rarity = root["planetRarity"].as_int64();
-    auto planet_hash_key = root["planetHashKey"].as_int64();
+    auto side_length = request_json.get<int64_t>("chunkFootprint.sideLength");
+    auto x = request_json.get<int64_t>("chunkFootprint.bottomLeft.x");
+    auto y = request_json.get<int64_t>("chunkFootprint.bottomLeft.y");
+    auto planet_rarity = request_json.get<int64_t>("planetRarity");
+    auto planet_hash_key = request_json.get<int64_t>("planetHashKey");
 
     auto planets = api_->mine_single(x, y, side_length, planet_rarity, planet_hash_key);
 
-    boost::json::array planet_locations;
+    pt::ptree response_json;
+    response_json.put("chunkFootprint.sideLength", side_length);
+    response_json.put("chunkFootprint.bottomLeft.x", x);
+    response_json.put("chunkFootprint.bottomLeft.y", y);
+
+    pt::ptree planets_json;
     for (auto &planet : planets)
     {
-        auto planet_json = internal::planet_location_json(planet);
-        planet_locations.emplace_back(planet_json);
+        auto p = internal::planet_location_json(planet);
+        planets_json.push_back(std::make_pair("", p));
     }
+    response_json.add_child("planetLocations", planets_json);
 
-    boost::json::object response_root;
-    response_root["planetLocations"] = planet_locations;
-    response_root["chunkFootprint"] = chunk_footprint;
-
-    std::string response = boost::json::serialize(response_root);
-    cb(response);
+    std::ostringstream response_stream(std::ios_base::out);
+    pt::write_json(response_stream, response_json);
+    cb(response_stream.str());
 }
