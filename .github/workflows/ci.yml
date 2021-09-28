@@ -67,7 +67,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: blue-space-cpu-${{matrix.os}}-deb
-          path: ${{github.workspace}}/build/blue-space-*-Linux.deb
+          path: ${{github.workspace}}/build/blue-space-*-*.deb
   build-cuda:
     name: "Build CUDA miner package"
     runs-on: ubuntu-latest
@@ -131,12 +131,12 @@ jobs:
           cd ${{github.workspace}}/build && \
           cpack -G DEB && \
           mkdir /artifacts && \
-          mv blue-space-*-Linux.deb /artifacts
+          mv blue-space-*-*.deb /artifacts
       - name: Archive .deb
         uses: actions/upload-artifact@v2
         with:
           name: blue-space-cuda-${{matrix.os}}-deb
-          path: /artifacts/blue-space-*-Linux.deb
+          path: /artifacts/blue-space-*-*.deb
   publish-release:
     name: "Publish release"
     needs:
