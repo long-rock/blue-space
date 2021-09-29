@@ -20,8 +20,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
-include(CPackConfig)
-
 if(BUILD_TEST)
     enable_testing()
     find_package(GTest REQUIRED)
@@ -46,3 +44,5 @@ if (CUDA_MINER)
     add_subdirectory("miner-cuda")
 endif()
 add_subdirectory("blue-space")
+
+include(CPackConfig)
