@@ -23,6 +23,8 @@ the `--cuda` flag is available only if you downloaded the CUDA version of Blue S
 
 You can get a list of all available flags with `blue-space --help`.
 
+This miner is compatible with the default "Remote Explorer" plugin included in the game.
+
 ## Tuning the CUDA miner
 
 The CUDA miner is _very_ sensitive to the parameters you pass to it. The parameters
