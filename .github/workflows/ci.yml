@@ -37,6 +37,16 @@ jobs:
           libboost-thread-dev \
           libboost-log-dev \
           libgtest-dev
+      - name: Install non broken file
+        run: |
+          sudo apt remove file libmagic1 libmagic-mgc &&
+          wget http://launchpadlibrarian.net/459362949/libmagic-mgc_5.37-6ubuntu1_amd64.deb &&
+          sudo dpkg -i libmagic-mgc_5.37-6ubuntu1_amd64.deb &&
+          wget http://launchpadlibrarian.net/459362952/libmagic1_5.37-6ubuntu1_amd64.deb &&
+          sudo dpkg -i ./libmagic1_5.37-6ubuntu1_amd64.deb &&
+          wget https://launchpad.net/ubuntu/+source/file/1:5.37-6ubuntu1/+build/18522512/+files/file_5.37-6ubuntu1_amd64.deb &&
+          sudo dpkg -i --force-all ./file_5.37-6ubuntu1_amd64.deb &&
+          file --version
       - name: Install CLI11
         run: |
           cd /tmp && \
@@ -96,6 +106,16 @@ jobs:
           libboost-thread-dev \
           libboost-log-dev \
           libgtest-dev
+      - name: Install non broken file
+        run: |
+          apt remove -y file libmagic1 libmagic-mgc &&
+          wget http://launchpadlibrarian.net/459362949/libmagic-mgc_5.37-6ubuntu1_amd64.deb &&
+          dpkg -i libmagic-mgc_5.37-6ubuntu1_amd64.deb &&
+          wget http://launchpadlibrarian.net/459362952/libmagic1_5.37-6ubuntu1_amd64.deb &&
+          dpkg -i ./libmagic1_5.37-6ubuntu1_amd64.deb &&
+          wget https://launchpad.net/ubuntu/+source/file/1:5.37-6ubuntu1/+build/18522512/+files/file_5.37-6ubuntu1_amd64.deb &&
+          dpkg -i --force-all ./file_5.37-6ubuntu1_amd64.deb &&
+          file --version
       - name: Install CLI11
         run: |
           cd /tmp && \
