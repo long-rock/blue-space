@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11) # Due to FetchContent requirement
 
 project(
     blue-space
-    VERSION 0.3.0
+    VERSION 0.4.0
     HOMEPAGE_URL https://github.com/long-rock/blue-space
     LANGUAGES CXX
 )
