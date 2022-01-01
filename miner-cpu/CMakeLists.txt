@@ -6,6 +6,7 @@ set(
 add_library(miner-cpu STATIC ${CPP_SOURCE})
 target_include_directories(miner-cpu PUBLIC "include")
 find_package(Boost REQUIRED COMPONENTS log)
+target_compile_definitions(miner-cpu PUBLIC BOOST_LOG_DYN_LINK) 
 target_link_libraries(miner-cpu PUBLIC miner-common PkgConfig::GMP Boost::log)
 
 find_package(OpenMP)

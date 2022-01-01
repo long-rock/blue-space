@@ -29,6 +29,7 @@ find_package(Boost REQUIRED COMPONENTS log)
 
 cuda_add_library(miner-cuda STATIC ${CU_SOURCE})
 target_include_directories(miner-cuda PUBLIC "include")
+target_compile_definitions(miner-cuda PUBLIC BOOST_LOG_DYN_LINK) 
 target_link_libraries(miner-cuda PUBLIC miner-common PkgConfig::GMP Boost::log CGBN::CGBN)
 
 if(BUILD_TEST)
